@@ -20,12 +20,14 @@ Chaque projet est un repertoire a la racine avec cette structure :
 ```
 nom_du_projet/
 ├── README.md                    # Documentation du projet
-├── NOMENCLATURE.md              # Liste de debit + instructions
+├── NOMENCLATURE.md              # Liste de debit + instructions (source)
 ├── generate_table.py            # Generateur STL + PDF technique (OBLIGATOIRE)
 ├── generate_guide.py            # Generateur guide construction PDF
+├── generate_nomenclature.py     # Generateur nomenclature PDF
 ├── index.html                   # Page projet pour le site statique
 ├── nom_du_projet.stl            # Maillage 3D genere
 ├── nom_du_projet_plan.pdf       # Plan technique genere
+├── nomenclature.pdf             # Nomenclature PDF generee
 └── guide_construction.pdf       # Guide illustre genere
 ```
 
@@ -52,6 +54,9 @@ GitHub Actions detecte automatiquement les repertoires contenant ce fichier.
 
 ### Nomenclature
 
+- Fournir en PDF (genere par `generate_nomenclature.py`) ET en Markdown (`NOMENCLATURE.md`)
+- Le PDF contient : couverture, tableau recapitulatif, instructions de debit,
+  outillage, et ordre d'assemblage (6 pages minimum)
 - Lister toutes les pieces avec ref (A, B, C...), dimensions, quantite, origine
 - Expliquer comment obtenir chaque piece a partir du materiau source
 - Inclure la liste d'outillage et l'ordre d'assemblage
@@ -82,9 +87,10 @@ cd nom_du_projet && python generate_guide.py
 2. Creer `generate_table.py` avec les constantes de dimensions et les fonctions
    `generate_stl()` et `generate_pdf()` (plan technique)
 3. Creer `generate_guide.py` pour le guide illustre pas a pas
-4. Creer `NOMENCLATURE.md` avec la liste de debit detaillee
-5. Creer `README.md` avec description, dimensions, fichiers, usage
-6. Creer `index.html` pour la page projet du site statique
-7. Mettre a jour `index.html` a la racine pour ajouter la carte du projet
-8. Executer les scripts pour generer STL et PDF
-9. Commiter tous les fichiers (y compris les generes)
+4. Creer `generate_nomenclature.py` pour la nomenclature PDF
+5. Creer `NOMENCLATURE.md` avec la liste de debit detaillee
+6. Creer `README.md` avec description, dimensions, fichiers, usage
+7. Creer `index.html` pour la page projet du site statique
+8. Mettre a jour `index.html` a la racine pour ajouter la carte du projet
+9. Executer les scripts pour generer STL, PDF technique, nomenclature et guide
+10. Commiter tous les fichiers (y compris les generes)

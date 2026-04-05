@@ -36,6 +36,7 @@ jobs:
               cd "$dir"
               python generate_table.py
               [ -f generate_guide.py ] && python generate_guide.py
+              [ -f generate_nomenclature.py ] && python generate_nomenclature.py
               cd ..
             fi
           done
