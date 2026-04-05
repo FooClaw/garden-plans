@@ -11,11 +11,11 @@ Choisir une palette marquee **HT** (traitement thermique, sans produit chimique)
 
 | Ref | Piece | Qte | Dimensions (mm) | Origine palette |
 |-----|-------|-----|-----------------|-----------------|
-| A | Latte assise | 5 | 600 x 95 x 22 | Lattes pleine largeur |
-| B | Latte dossier | 4 | 512 x 95 x 22 | Lattes pleine largeur |
-| C | Pied avant | 2 | 44 x 70 x 250 | 2 lattes collees |
-| D | Longeron lateral | 2 | 699 x 70 x 44 | 2 lattes collees |
-| E | Support dossier | 2 | 500 x 70 x 44 | 2 lattes collees |
+| A | Latte assise | 4 | 600 x 95 x 22 | Lattes pleine largeur |
+| B | Latte dossier | 5 | 512 x 95 x 22 | Lattes pleine largeur |
+| C | Pied avant | 2 | 44 x 70 x 180 | 2 lattes collees |
+| D | Longeron lateral | 2 | 710 x 70 x 44 | 2 lattes collees |
+| E | Support dossier | 2 | 600 x 70 x 44 | 2 lattes collees |
 | F | Traverse avant | 1 | 512 x 44 x 22 | Latte recoupee |
 | G | Traverse basse arr. | 1 | 512 x 22 x 22 | Latte refendue |
 | | **Total pieces** | **17** | | **1 palette** |
@@ -24,7 +24,7 @@ Choisir une palette marquee **HT** (traitement thermique, sans produit chimique)
 
 ## Instructions de debit
 
-### Ref. A - Lattes d'assise (x5)
+### Ref. A - Lattes d'assise (x4)
 
 | Propriete | Valeur |
 |-----------|--------|
@@ -38,7 +38,7 @@ Choisir une palette marquee **HT** (traitement thermique, sans produit chimique)
 4. Poncer les deux faces (grains 80, 120, 180)
 5. Les lattes gardent leur largeur originale de 95 mm
 
-### Ref. B - Lattes de dossier (x4)
+### Ref. B - Lattes de dossier (x5)
 
 | Propriete | Valeur |
 |-----------|--------|
@@ -52,35 +52,36 @@ Choisir une palette marquee **HT** (traitement thermique, sans produit chimique)
 
 | Propriete | Valeur |
 |-----------|--------|
-| Dimensions finies | 44 x 70 x 250 mm |
+| Dimensions finies | 44 x 70 x 180 mm |
 | Origine | 2 lattes collees face a face |
 
 **Debit :**
-1. Recouper 4 morceaux de latte a 250 mm de long et 70 mm de large
+1. Recouper 4 morceaux de latte a 180 mm de long et 70 mm de large
 2. Coller par 2 face a face (colle D3 + serre-joints 24h)
 3. Poncer apres sechage
+4. Pieds tres courts : la chaise est tres basse
 
 ### Ref. D - Longerons lateraux (x2)
 
 | Propriete | Valeur |
 |-----------|--------|
-| Dimensions finies | 699 x 70 x 44 mm |
+| Dimensions finies | 710 x 70 x 44 mm |
 | Origine | 2 lattes collees face a face |
 
-**Debit :** Meme processus que Ref. C, recouper a 699 mm.
-Les longerons sont au sol et depassent de 200 mm a l'arriere
+**Debit :** Meme processus que Ref. C, recouper a 710 mm.
+Les longerons sont au sol et depassent de 300 mm a l'arriere
 de l'assise pour assurer la stabilite de la chaise.
 
 ### Ref. E - Supports dossier (x2)
 
 | Propriete | Valeur |
 |-----------|--------|
-| Dimensions finies | 500 x 70 x 44 mm |
+| Dimensions finies | 600 x 70 x 44 mm |
 | Origine | 2 lattes collees face a face |
 
-**Debit :** Meme processus que Ref. C, recouper a 500 mm.
-Les supports s'inclinent vers l'arriere (~25 deg de la verticale)
-pour former le dossier.
+**Debit :** Meme processus que Ref. C, recouper a 600 mm.
+Les supports s'inclinent vers l'arriere (~30 deg de la verticale)
+pour former le dossier a ~120 deg de l'assise.
 
 ### Ref. F - Traverse avant (x1)
 
@@ -112,7 +113,7 @@ pour former le dossier.
 | Visseuse + vis a bois (4x50 mm) | Assemblage |
 | Serre-joints (x4 min.) | Collage des pieces doublees |
 | Colle a bois D3 | Collage pieds, longerons, supports |
-| Fausse equerre | Angle du dossier (~115 deg) |
+| Fausse equerre | Angle du dossier (~120 deg) |
 
 ---
 
@@ -124,8 +125,8 @@ pour former le dossier.
 4. **Collage** : Coller les lattes par 2 pour pieds, longerons et supports (24h)
 5. **Cadres lateraux** : Assembler longeron + pied avant + support dossier (x2)
 6. **Traverses** : Visser traverse avant (F) et traverse basse (G)
-7. **Assise** : Visser les 5 lattes A sur le cadre (espacement 6 mm)
-8. **Dossier** : Visser les 4 lattes B sur les supports dossier (espacement regulier)
+7. **Assise** : Visser les 4 lattes A sur le cadre (espacement 10 mm)
+8. **Dossier** : Visser les 5 lattes B sur les supports dossier
 9. **Finition** : Huile de lin, vernis ou lasure
 
 ---
@@ -137,10 +138,11 @@ Ce design est fidellement inspire du projet Instructables
 par Well Done Tips.
 
 Caracteristiques du design minimaliste :
-- Assise tres basse (250 mm) pour un confort type transat
-- Dossier incline a ~115 degres pour une position detendue
+- Assise tres basse (180 mm) pour un confort type transat
+- Dossier incline a ~120 degres pour une position detendue
 - Pas d'accoudoirs (design epure, fidele a l'original)
 - Lattes pleine largeur (95 mm, non refendues)
-- Longerons depassant de 200 mm a l'arriere pour la stabilite
-- Supports dossier inclines, fixees sur les longerons
+- Ecarts visibles entre lattes (10 mm) comme sur l'original
+- Longerons depassant de 300 mm a l'arriere pour la stabilite
+- Assise courte (4 lattes) - les jambes depassent devant
 - 1 seule palette suffit pour 1 chaise

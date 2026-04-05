@@ -16,21 +16,21 @@ PDF_PATH = os.path.join(OUTPUT_DIR, "nomenclature.pdf")
 WOOD1, WOOD2, WOOD3, WOOD4 = "#d2a679", "#c49a6c", "#b8956a", "#a0784e"
 
 # Dimensions calculees (coherentes avec generate_table.py)
-SLAT_W = 95; SLAT_T = 22; SLAT_GAP = 6
-FRAME_W = 44; FRAME_D = 70; N_SEAT = 5; N_BACK = 4
-SEAT_H = 250; SEAT_DEPTH = N_SEAT * SLAT_W + (N_SEAT - 1) * SLAT_GAP
-RUNNER_EXTEND = 200; RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND
-BACKREST_TILT = 25; BACK_LENGTH = 500
+SLAT_W = 95; SLAT_T = 22; SLAT_GAP = 10
+FRAME_W = 44; FRAME_D = 70; N_SEAT = 4; N_BACK = 5
+SEAT_H = 180; SEAT_DEPTH = N_SEAT * SLAT_W + (N_SEAT - 1) * SLAT_GAP
+RUNNER_EXTEND = 300; RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND
+BACKREST_TILT = 30; BACK_LENGTH = 600
 INNER_W = 600 - 2 * FRAME_W
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
 TOTAL_H = SEAT_H + BACK_DZ
 
 PIECES = [
-    ("A", "Latte assise", 5, "600 x 95 x 22", "Lattes pleine largeur", WOOD2),
-    ("B", "Latte dossier", 4, f"{INNER_W:.0f} x 95 x 22", "Lattes pleine largeur", WOOD3),
+    ("A", "Latte assise", 4, "600 x 95 x 22", "Lattes pleine largeur", WOOD2),
+    ("B", "Latte dossier", 5, f"{INNER_W:.0f} x 95 x 22", "Lattes pleine largeur", WOOD3),
     ("C", "Pied avant", 2, f"44 x 70 x {SEAT_H:.0f}", "2 lattes collees", WOOD1),
     ("D", "Longeron lateral", 2, f"{RUNNER_L:.0f} x 70 x 44", "2 lattes collees", WOOD1),
-    ("E", "Support dossier", 2, "500 x 70 x 44", "2 lattes collees", WOOD1),
+    ("E", "Support dossier", 2, "600 x 70 x 44", "2 lattes collees", WOOD1),
     ("F", "Traverse avant", 1, f"{INNER_W:.0f} x 44 x 22", "Latte recoupee", WOOD3),
     ("G", "Traverse basse arr.", 1, f"{INNER_W:.0f} x 22 x 22", "Latte refendue", WOOD3),
 ]
@@ -44,7 +44,7 @@ TOOLS = [
     ("Visseuse + vis 4x50 mm", "Assemblage"),
     ("Serre-joints (x4)", "Collage des pieds"),
     ("Colle a bois D3", "Collage pieces doublees"),
-    ("Fausse equerre", "Angle dossier ~115 deg"),
+    ("Fausse equerre", "Angle dossier ~120 deg"),
 ]
 
 ASSEMBLY = [

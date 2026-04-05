@@ -17,12 +17,12 @@ WOOD1, WOOD2, WOOD3, WOOD4 = "#d2a679", "#c49a6c", "#b8956a", "#a0784e"
 
 # Dimensions (coherentes avec generate_table.py)
 CHAIR_W = 600
-SLAT_W = 95; SLAT_T = 22; SLAT_GAP = 6
+SLAT_W = 95; SLAT_T = 22; SLAT_GAP = 10
 FRAME_W = 44; FRAME_D = 70
-SEAT_H = 250; N_SEAT = 5; N_BACK = 4
+SEAT_H = 180; N_SEAT = 4; N_BACK = 5
 SEAT_DEPTH = N_SEAT * SLAT_W + (N_SEAT - 1) * SLAT_GAP  # ~499
-RUNNER_EXTEND = 200; RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND
-BACKREST_TILT = 25; BACK_LENGTH = 500
+RUNNER_EXTEND = 300; RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND
+BACKREST_TILT = 30; BACK_LENGTH = 600
 INNER_W = CHAIR_W - 2 * FRAME_W
 BACK_DY = BACK_LENGTH * math.sin(math.radians(BACKREST_TILT))
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
@@ -152,10 +152,10 @@ def page_dismantling(pdf):
 def page_cutting(pdf):
     fig, ax = new_page(pdf, "Etape 2 : Debit des pieces")
     pieces = [
-        ("A", "Latte assise x5", "600 x 95 x 22", WOOD2, 60),
-        ("B", "Latte dossier x4", f"{INNER_W:.0f} x 95 x 22", WOOD3, 52),
+        ("A", "Latte assise x4", "600 x 95 x 22", WOOD2, 60),
+        ("B", "Latte dossier x5", f"{INNER_W:.0f} x 95 x 22", WOOD3, 52),
         ("D", "Longeron lateral x2", f"{RUNNER_L:.0f} x 70 x 44", WOOD1, 70),
-        ("E", "Support dossier x2", "500 x 70 x 44", WOOD1, 50),
+        ("E", "Support dossier x2", "600 x 70 x 44", WOOD1, 50),
         ("C", "Pied avant x2", f"44 x 70 x {SEAT_H:.0f}", WOOD1, 8),
         ("F", "Traverse avant", f"{INNER_W:.0f} x 44 x 22", WOOD3, 52),
         ("G", "Traverse arriere", f"{INNER_W:.0f} x 22 x 22", WOOD3, 52),
@@ -278,10 +278,10 @@ def page_traverses(pdf):
 
 def page_seat(pdf):
     fig, ax = new_page(pdf, "Etape 6 : Pose de l'assise")
-    ax.text(50, 125, "Visser les 5 lattes (A) avec espacement regulier",
+    ax.text(50, 125, f"Visser les {N_SEAT} lattes (A) avec espacement regulier",
             ha="center", fontsize=10, color="#666")
     # Vue de dessus
-    colors = [WOOD2, WOOD1, WOOD3, WOOD2, WOOD1]
+    colors = [WOOD2, WOOD1, WOOD3, WOOD2]
     s = 0.06
     for i in range(N_SEAT):
         sy = i * (SLAT_W + SLAT_GAP)
@@ -290,7 +290,7 @@ def page_seat(pdf):
         if i == 0:
             ax.text(15+CHAIR_W*s/2, 85+sy*s+SLAT_W*s/2, "A",
                     ha="center", va="center", fontsize=10, fontweight="bold")
-    ax.text(50, 80, "Vue de dessus - 5 lattes de 600 x 95 mm",
+    ax.text(50, 80, f"Vue de dessus - {N_SEAT} lattes de 600 x 95 mm",
             ha="center", fontsize=9, color="#666")
     # Gap detail
     ax.add_patch(Rectangle((30, 62), 18, 6, fc=WOOD2, ec="black", lw=0.8))
@@ -304,7 +304,7 @@ def page_seat(pdf):
 
 def page_backrest(pdf):
     fig, ax = new_page(pdf, "Etape 7 : Pose du dossier")
-    ax.text(50, 125, "Visser les 4 lattes (B) sur les supports dossier",
+    ax.text(50, 125, f"Visser les {N_BACK} lattes (B) sur les supports dossier",
             ha="center", fontsize=10, color="#666")
     s = 0.04
     x0 = 20; y0 = 60
@@ -324,9 +324,9 @@ def page_backrest(pdf):
             ax.text(x0+CHAIR_W*s/2, y0+(bz+SLAT_W/2)*s, "B",
                     ha="center", va="center", fontsize=10, fontweight="bold",
                     color="white")
-    ax.text(50, y0-5, f"Vue arriere - 4 lattes de {INNER_W:.0f} x 95 mm",
+    ax.text(50, y0-5, f"Vue arriere - {N_BACK} lattes de {INNER_W:.0f} x 95 mm",
             ha="center", fontsize=9, color="#666")
-    ax.text(50, y0-12, "2 vis par latte et par support = 16 vis",
+    ax.text(50, y0-12, f"2 vis par latte et par support = {N_BACK*4} vis",
             ha="center", fontsize=10, fontweight="bold")
     pdf.savefig(fig); plt.close(fig)
 

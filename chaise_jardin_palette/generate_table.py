@@ -29,28 +29,28 @@ CHAIR_WIDTH = 600.0         # largeur totale
 # Lattes (planches de palette pleine largeur, non refendues)
 SLAT_W = 95.0               # largeur pleine d'une planche palette
 SLAT_T = 22.0               # epaisseur
-SLAT_GAP = 6.0              # espace entre lattes
+SLAT_GAP = 10.0             # espace entre lattes (visible comme sur l'original)
 
 # Structure laterale (section doublee : 2 planches collees)
 FRAME_W = 44.0              # epaisseur cadre (2 x 22 mm)
 FRAME_D = 70.0              # profondeur cadre
 
-# Assise
-SEAT_H = 250.0              # hauteur assise (tres basse, style deck chair)
-N_SEAT_SLATS = 5            # 5 lattes pleine largeur
-SEAT_DEPTH = N_SEAT_SLATS * SLAT_W + (N_SEAT_SLATS - 1) * SLAT_GAP  # ~499
+# Assise (tres basse, comme sur les photos)
+SEAT_H = 180.0              # hauteur assise (genoux au-dessus des hanches)
+N_SEAT_SLATS = 4            # 4 lattes (assise courte, jambes depassent)
+SEAT_DEPTH = N_SEAT_SLATS * SLAT_W + (N_SEAT_SLATS - 1) * SLAT_GAP  # ~410
 
-# Pieds avant (courts, verticaux)
+# Pieds avant (tres courts, a peine visibles)
 FRONT_LEG_H = SEAT_H
 
-# Longerons lateraux (au sol, depassent a l'arriere)
-RUNNER_EXTEND = 200.0       # depassement a l'arriere du siege
-RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND  # longueur totale
+# Longerons lateraux (au sol, depassent loin a l'arriere pour stabilite)
+RUNNER_EXTEND = 300.0       # depassement a l'arriere (stabilite)
+RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND  # longueur totale ~710
 
-# Dossier
-BACKREST_TILT = 25.0        # inclinaison du dossier (deg depuis la verticale)
-BACK_LENGTH = 500.0         # longueur des supports dossier
-N_BACK_SLATS = 4            # 4 lattes dossier
+# Dossier (plus incline et plus haut que la version precedente)
+BACKREST_TILT = 30.0        # inclinaison du dossier (deg depuis la verticale)
+BACK_LENGTH = 600.0         # longueur des supports dossier (plus haut)
+N_BACK_SLATS = 5            # 5 lattes dossier
 
 # Dimensions calculees
 INNER_WIDTH = CHAIR_WIDTH - 2 * FRAME_W    # largeur interieure (~512)

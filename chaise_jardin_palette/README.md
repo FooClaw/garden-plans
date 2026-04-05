@@ -1,32 +1,33 @@
 # Deck Chair de Jardin en Palettes Recyclees
 
 Chaise de jardin type deck chair, 100% bois de palette.
-Design minimaliste : assise tres basse, dossier incline, sans accoudoirs.
+Design minimaliste : assise tres basse, dossier tres incline, sans accoudoirs.
 
 Fidellement inspire du projet [A Deck Chair Made From Pallet Wood Leftovers](https://www.instructables.com/A-Deck-Chair-Made-From-Pallet-Wood-Leftovers/)
 par Well Done Tips sur Instructables. Adaptee pour accompagner la table basse palette (450 mm).
 
 ## Design
 
-- Assise tres basse (250 mm) - style transat
-- Dossier incline a ~115 degres - position detendue
+- Assise tres basse (180 mm) - style transat, genoux au-dessus des hanches
+- Dossier incline a ~120 degres - position tres detendue
 - Pas d'accoudoirs - design epure et minimaliste
-- Lattes pleine largeur (95 mm, non refendues)
-- Longerons au sol depassant a l'arriere pour la stabilite
-- Supports dossier inclines fixes sur les longerons
+- Lattes pleine largeur (95 mm, non refendues) avec ecarts visibles (10 mm)
+- Assise courte (4 lattes) - les jambes depassent devant
+- Longerons au sol depassant de 300 mm a l'arriere pour la stabilite
+- Supports dossier inclines (600 mm) fixes sur les longerons
 
 ## Dimensions
 
 | Element | Dimensions |
 |---------|-----------|
-| Chaise (L x P x H) | 600 x 699 x 703 mm |
-| Hauteur assise | 250 mm |
-| Angle dossier | ~115 degres |
-| Assise | 5 lattes de 95 x 22 mm |
-| Dossier | 4 lattes de 95 x 22 mm |
-| Longerons | 699 x 70 x 44 mm |
-| Pieds avant | 44 x 70 x 250 mm |
-| Supports dossier | 500 x 70 x 44 mm |
+| Chaise (L x P x H) | 600 x 710 x 700 mm |
+| Hauteur assise | 180 mm |
+| Angle dossier | ~120 degres |
+| Assise | 4 lattes de 95 x 22 mm |
+| Dossier | 5 lattes de 95 x 22 mm |
+| Longerons | 710 x 70 x 44 mm |
+| Pieds avant | 44 x 70 x 180 mm |
+| Supports dossier | 600 x 70 x 44 mm |
 
 ## Fichiers
 
