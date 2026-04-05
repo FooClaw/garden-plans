@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  command = "echo 'Static site - no build needed'"
+
+# Redirects for clean URLs
+[[redirects]]
+  from = "/table-basse-palette"
+  to = "/table_basse_palette/"
+  status = 301
