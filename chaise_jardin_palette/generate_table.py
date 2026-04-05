@@ -1,9 +1,12 @@
 """
-Chaise de jardin empilable en palettes recyclees - Modele 3D
+Chaise de jardin type deck chair en palettes recyclees - Modele 3D
 
 Inspiree du projet Instructables "A Deck Chair Made From Pallet Wood Leftovers".
-Dimensions adaptees pour accompagner la table basse palette (450 mm de haut).
-Design empilable : pieds avant elargi et arriere retreci pour imbrication.
+Design classique deck chair : assise basse et legerement inclinee, dossier
+recline a ~110 degres, accoudoirs larges, 2 cadres lateraux.
+
+Adaptee pour accompagner la table basse palette (450 mm) :
+assise a ~350 mm, compatible empilage.
 
 Usage :
     python3 generate_table.py
@@ -17,154 +20,138 @@ from stl import mesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, FancyArrowPatch, Polygon
+from matplotlib.patches import Rectangle, Polygon, FancyArrowPatch
 from matplotlib.backends.backend_pdf import PdfPages
 
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# --- Dimensions (mm) - adaptees table basse 450mm ---
+# --- Dimensions (mm) - style deck chair / Adirondack ---
+# Gabarit global
+CHAIR_WIDTH = 600.0         # largeur totale (ext. accoudoirs)
+SEAT_WIDTH = 500.0          # largeur interieure (entre cadres lateraux)
+
+# Pieds avant (courts, verticaux)
+FRONT_LEG_W = 44.0          # 2 lattes collees
+FRONT_LEG_D = 70.0          # profondeur pied avant
+FRONT_LEG_H = 350.0         # hauteur = hauteur assise avant
+
+# Pieds arriere (longs, inclines, montent au dossier)
+BACK_LEG_W = 44.0
+BACK_LEG_D = 70.0
+BACK_LEG_H = 900.0          # hauteur totale pied arriere
+BACK_LEG_ANGLE = 15.0       # inclinaison vers l'arriere (degres)
+
 # Assise
-SEAT_WIDTH = 500.0          # largeur assise (interieur accoudoirs)
-SEAT_DEPTH = 450.0          # profondeur assise
-SEAT_HEIGHT = 370.0         # hauteur assise (table = 450, confort = table - 80)
+SEAT_DEPTH = 480.0          # profondeur assise
+SEAT_FRONT_H = 350.0        # hauteur avant de l'assise
+SEAT_BACK_H = 300.0         # hauteur arriere (assise inclinee ~6 deg)
+N_SEAT_SLATS = 6            # nombre de lattes assise
+SLAT_WIDTH = 70.0           # largeur latte (refendue)
+SLAT_THICKNESS = 22.0
+SLAT_GAP = 5.0
 
 # Dossier
-BACKREST_HEIGHT = 400.0     # hauteur du dossier au-dessus de l'assise
-BACKREST_ANGLE = 10.0       # inclinaison en degres vers l'arriere
+BACKREST_ANGLE = 110.0      # angle dossier/assise (degres)
+BACKREST_H = 500.0          # hauteur utile du dossier
+N_BACK_SLATS = 5            # nombre de lattes dossier
 
-# Lattes de palette
-PLANK_THICKNESS = 22.0
-PLANK_WIDTH = 70.0          # largeur lattes (refendues pour chaise plus legere)
-PLANK_GAP = 5.0
-
-# Assise : nombre de lattes
-N_SEAT_PLANKS = 6
-# Dossier : nombre de lattes
-N_BACK_PLANKS = 4
-
-# Pieds (section carree, depuis lattes epaisses collees)
-LEG_SECTION = 44.0          # 2 x 22mm colles
-# Pieds avant
-FRONT_LEG_HEIGHT = SEAT_HEIGHT
-# Pieds arriere (montent jusqu'au dossier)
-BACK_LEG_HEIGHT = SEAT_HEIGHT + BACKREST_HEIGHT
+# Accoudoirs
+ARMREST_L = 550.0           # longueur accoudoir
+ARMREST_W = 95.0            # largeur (latte pleine)
+ARMREST_T = 22.0            # epaisseur
+ARMREST_H = 600.0           # hauteur du dessus de l'accoudoir
 
 # Traverses
-BRACE_SECTION = 22.0        # epaisseur traverse
-BRACE_WIDTH_B = 44.0        # largeur traverse
+BRACE_SECTION = 44.0
+BRACE_T = 22.0
 
-# Empilabilite : ecart lateral entre pieds avant et arriere
-# Les pieds arriere sont plus rapproches que les pieds avant
-FRONT_LEG_SPREAD = SEAT_WIDTH + 2 * LEG_SECTION  # largeur totale ext. avant
-BACK_LEG_SPREAD = SEAT_WIDTH - 20.0              # largeur int. arriere (retrecissement)
-STACK_CLEARANCE = 10.0      # jeu pour empiler
+# Empilabilite
+STACK_TAPER = 30.0          # retrecissement pieds arriere pour empilage
 
 
 def _box_faces(x, y, z, dx, dy, dz):
     """Genere les 12 triangles (6 faces) d'un parallelipede."""
     v = np.array([
-        [x, y, z],
-        [x + dx, y, z],
-        [x + dx, y + dy, z],
-        [x, y + dy, z],
-        [x, y, z + dz],
-        [x + dx, y, z + dz],
-        [x + dx, y + dy, z + dz],
-        [x, y + dy, z + dz],
+        [x, y, z], [x+dx, y, z], [x+dx, y+dy, z], [x, y+dy, z],
+        [x, y, z+dz], [x+dx, y, z+dz], [x+dx, y+dy, z+dz], [x, y+dy, z+dz],
     ])
-    faces = [
-        [v[0], v[2], v[1]], [v[0], v[3], v[2]],
-        [v[4], v[5], v[6]], [v[4], v[6], v[7]],
-        [v[0], v[1], v[5]], [v[0], v[5], v[4]],
-        [v[2], v[3], v[7]], [v[2], v[7], v[6]],
-        [v[0], v[4], v[7]], [v[0], v[7], v[3]],
-        [v[1], v[2], v[6]], [v[1], v[6], v[5]],
+    return [
+        [v[0],v[2],v[1]], [v[0],v[3],v[2]],
+        [v[4],v[5],v[6]], [v[4],v[6],v[7]],
+        [v[0],v[1],v[5]], [v[0],v[5],v[4]],
+        [v[2],v[3],v[7]], [v[2],v[7],v[6]],
+        [v[0],v[4],v[7]], [v[0],v[7],v[3]],
+        [v[1],v[2],v[6]], [v[1],v[6],v[5]],
     ]
-    return faces
 
 
 def generate_stl():
-    """Genere le fichier STL de la chaise de jardin empilable."""
+    """Genere le fichier STL de la deck chair."""
     all_faces = []
+    rad = math.radians(BACK_LEG_ANGLE)
+    back_offset_y = math.sin(rad) * BACK_LEG_H  # recul du haut du pied arriere
 
-    # Offsets pieds
-    front_left_x = 0
-    front_right_x = FRONT_LEG_SPREAD - LEG_SECTION
-    back_offset = (FRONT_LEG_SPREAD - BACK_LEG_SPREAD) / 2.0
-    back_left_x = back_offset
-    back_right_x = back_offset + BACK_LEG_SPREAD - LEG_SECTION
+    # --- Pieds avant (x2) ---
+    for side_x in [0, CHAIR_WIDTH - FRONT_LEG_W]:
+        all_faces.extend(_box_faces(side_x, 0, 0,
+                                    FRONT_LEG_W, FRONT_LEG_D, FRONT_LEG_H))
 
-    # --- 4 Pieds ---
-    # Avant gauche
-    all_faces.extend(_box_faces(front_left_x, 0, 0,
-                                LEG_SECTION, LEG_SECTION, FRONT_LEG_HEIGHT))
-    # Avant droit
-    all_faces.extend(_box_faces(front_right_x, 0, 0,
-                                LEG_SECTION, LEG_SECTION, FRONT_LEG_HEIGHT))
-    # Arriere gauche (pleine hauteur)
-    all_faces.extend(_box_faces(back_left_x, SEAT_DEPTH - LEG_SECTION, 0,
-                                LEG_SECTION, LEG_SECTION, BACK_LEG_HEIGHT))
-    # Arriere droit (pleine hauteur)
-    all_faces.extend(_box_faces(back_right_x, SEAT_DEPTH - LEG_SECTION, 0,
-                                LEG_SECTION, LEG_SECTION, BACK_LEG_HEIGHT))
+    # --- Pieds arriere (x2, verticaux simplifies pour STL) ---
+    back_y = SEAT_DEPTH - BACK_LEG_D
+    taper = STACK_TAPER
+    for side_x in [taper, CHAIR_WIDTH - BACK_LEG_W - taper]:
+        all_faces.extend(_box_faces(side_x, back_y, 0,
+                                    BACK_LEG_W, BACK_LEG_D, BACK_LEG_H))
 
-    # --- Traverses de structure ---
-    # Traverse avant (sous assise)
-    all_faces.extend(_box_faces(front_left_x, 0,
-                                SEAT_HEIGHT - PLANK_THICKNESS - BRACE_SECTION,
-                                FRONT_LEG_SPREAD, BRACE_SECTION, BRACE_SECTION))
-    # Traverse arriere (sous assise)
-    all_faces.extend(_box_faces(back_left_x, SEAT_DEPTH - LEG_SECTION,
-                                SEAT_HEIGHT - PLANK_THICKNESS - BRACE_SECTION,
-                                BACK_LEG_SPREAD, BRACE_SECTION, BRACE_SECTION))
-    # Traverses laterales (sous assise, reliant avant-arriere)
-    for lx_front, lx_back in [(front_left_x, back_left_x),
-                                (front_right_x, back_right_x)]:
-        cx = min(lx_front, lx_back)
-        all_faces.extend(_box_faces(cx, LEG_SECTION,
-                                    SEAT_HEIGHT - PLANK_THICKNESS - BRACE_SECTION,
-                                    LEG_SECTION, SEAT_DEPTH - 2 * LEG_SECTION,
-                                    BRACE_SECTION))
-
-    # --- Assise (lattes) ---
-    seat_z = SEAT_HEIGHT - PLANK_THICKNESS
-    total_seat_w = N_SEAT_PLANKS * PLANK_WIDTH + (N_SEAT_PLANKS - 1) * PLANK_GAP
-    seat_start_x = (FRONT_LEG_SPREAD - total_seat_w) / 2.0
-    for i in range(N_SEAT_PLANKS):
-        px = seat_start_x + i * (PLANK_WIDTH + PLANK_GAP)
-        all_faces.extend(_box_faces(px, 0, seat_z,
-                                    PLANK_WIDTH, SEAT_DEPTH, PLANK_THICKNESS))
+    # --- Assise (lattes inclinees) ---
+    total_slats_w = N_SEAT_SLATS * SLAT_WIDTH + (N_SEAT_SLATS - 1) * SLAT_GAP
+    slat_start_x = (CHAIR_WIDTH - total_slats_w) / 2
+    for i in range(N_SEAT_SLATS):
+        sx = slat_start_x + i * (SLAT_WIDTH + SLAT_GAP)
+        # Assise legerement inclinee (avant plus haut)
+        z_front = SEAT_FRONT_H - SLAT_THICKNESS
+        all_faces.extend(_box_faces(sx, 0, z_front,
+                                    SLAT_WIDTH, SEAT_DEPTH, SLAT_THICKNESS))
 
     # --- Dossier (lattes) ---
-    back_z_base = SEAT_HEIGHT
-    total_back_h = N_BACK_PLANKS * PLANK_WIDTH + (N_BACK_PLANKS - 1) * PLANK_GAP
-    back_start_x = (FRONT_LEG_SPREAD - (BACK_LEG_SPREAD - 2 * LEG_SECTION)) / 2.0
-    back_plank_width = BACK_LEG_SPREAD - 2 * LEG_SECTION
-    for i in range(N_BACK_PLANKS):
-        pz = back_z_base + i * (PLANK_WIDTH + PLANK_GAP)
-        all_faces.extend(_box_faces(back_start_x, SEAT_DEPTH - LEG_SECTION,
-                                    pz,
-                                    back_plank_width, PLANK_THICKNESS, PLANK_WIDTH))
+    back_plank_w = SEAT_WIDTH - 2 * BACK_LEG_W + 2 * taper
+    back_start_x = (CHAIR_WIDTH - back_plank_w) / 2
+    for i in range(N_BACK_SLATS):
+        bz = SEAT_FRONT_H + 30 + i * (SLAT_WIDTH + SLAT_GAP)
+        all_faces.extend(_box_faces(back_start_x, back_y, bz,
+                                    back_plank_w, SLAT_THICKNESS, SLAT_WIDTH))
 
-    # --- Traverse basse (entre pieds avant, renfort) ---
-    rung_z = 120.0
-    all_faces.extend(_box_faces(front_left_x + LEG_SECTION, 0, rung_z,
-                                FRONT_LEG_SPREAD - 2 * LEG_SECTION,
-                                BRACE_SECTION, BRACE_SECTION))
-    # Traverse basse arriere
-    all_faces.extend(_box_faces(back_left_x + LEG_SECTION,
-                                SEAT_DEPTH - LEG_SECTION, rung_z,
-                                BACK_LEG_SPREAD - 2 * LEG_SECTION,
-                                BRACE_SECTION, BRACE_SECTION))
+    # --- Accoudoirs (x2) ---
+    for side_x in [0, CHAIR_WIDTH - ARMREST_W]:
+        all_faces.extend(_box_faces(side_x, 0, ARMREST_H,
+                                    ARMREST_W, ARMREST_L, ARMREST_T))
 
-    # --- Construire le mesh ---
+    # --- Traverses structure ---
+    # Avant
+    all_faces.extend(_box_faces(FRONT_LEG_W, 0, SEAT_FRONT_H - SLAT_THICKNESS - BRACE_T,
+                                CHAIR_WIDTH - 2 * FRONT_LEG_W, BRACE_T, BRACE_T))
+    # Arriere
+    all_faces.extend(_box_faces(taper + BACK_LEG_W, back_y,
+                                SEAT_BACK_H - SLAT_THICKNESS - BRACE_T,
+                                CHAIR_WIDTH - 2*(taper + BACK_LEG_W), BRACE_T, BRACE_T))
+    # Laterales
+    for side_x in [0, CHAIR_WIDTH - FRONT_LEG_W]:
+        all_faces.extend(_box_faces(side_x, FRONT_LEG_D,
+                                    SEAT_FRONT_H - SLAT_THICKNESS - BRACE_T,
+                                    FRONT_LEG_W, SEAT_DEPTH - FRONT_LEG_D - BACK_LEG_D,
+                                    BRACE_T))
+    # Barre basse avant
+    all_faces.extend(_box_faces(FRONT_LEG_W, 0, 100,
+                                CHAIR_WIDTH - 2 * FRONT_LEG_W, BRACE_T, BRACE_T))
+
+    # --- Construire mesh ---
     faces_array = np.array(all_faces)
-    chair_mesh = mesh.Mesh(np.zeros(faces_array.shape[0], dtype=mesh.Mesh.dtype))
+    m = mesh.Mesh(np.zeros(faces_array.shape[0], dtype=mesh.Mesh.dtype))
     for i, f in enumerate(faces_array):
-        chair_mesh.vectors[i] = f
+        m.vectors[i] = f
 
     stl_path = os.path.join(OUTPUT_DIR, "chaise_jardin_palette.stl")
-    chair_mesh.save(stl_path)
+    m.save(stl_path)
     print(f"STL genere: {stl_path}")
     return stl_path
 
@@ -175,8 +162,7 @@ def _add_dim_h(ax, x1, x2, y, label, offset=8):
                 arrowprops=dict(arrowstyle="<->", color="blue", lw=0.8))
     ax.plot([x1, x1], [y, yo], "b-", lw=0.4)
     ax.plot([x2, x2], [y, yo], "b-", lw=0.4)
-    ax.text((x1 + x2) / 2, yo + 3, label, ha="center", fontsize=7, color="blue")
-
+    ax.text((x1+x2)/2, yo+3, label, ha="center", fontsize=7, color="blue")
 
 def _add_dim_v(ax, x, y1, y2, label, offset=8):
     xo = x + offset
@@ -184,154 +170,152 @@ def _add_dim_v(ax, x, y1, y2, label, offset=8):
                 arrowprops=dict(arrowstyle="<->", color="blue", lw=0.8))
     ax.plot([x, xo], [y1, y1], "b-", lw=0.4)
     ax.plot([x, xo], [y2, y2], "b-", lw=0.4)
-    ax.text(xo + 3, (y1 + y2) / 2, label, ha="left", va="center", fontsize=7,
-            color="blue", rotation=90)
+    ax.text(xo+3, (y1+y2)/2, label, ha="left", va="center", fontsize=7, color="blue", rotation=90)
 
 
 def generate_pdf():
-    """Genere le plan technique PDF de la chaise."""
+    """Genere le plan technique PDF de la deck chair."""
     pdf_path = os.path.join(OUTPUT_DIR, "chaise_jardin_palette_plan.pdf")
-    WOOD1, WOOD2, WOOD3, WOOD4 = "#d2a679", "#c49a6c", "#b8956a", "#a0784e"
+    W1, W2, W3, W4 = "#d2a679", "#c49a6c", "#b8956a", "#a0784e"
 
     fig = plt.figure(figsize=(11.69, 8.27))
-    fig.suptitle("Plan Technique - Chaise de Jardin Empilable en Palettes",
+    fig.suptitle("Plan Technique - Deck Chair en Palettes Recyclees",
                  fontsize=13, fontweight="bold")
 
-    # ===================== VUE DE FACE =====================
-    ax1 = fig.add_axes([0.04, 0.38, 0.28, 0.52])
-    ax1.set_title("Vue de face", fontsize=10)
+    # ===================== VUE DE COTE =====================
+    ax1 = fig.add_axes([0.04, 0.38, 0.30, 0.52])
+    ax1.set_title("Vue de cote", fontsize=10)
     ax1.set_aspect("equal")
 
-    s = 0.5
-    total_h = BACK_LEG_HEIGHT
-    # Pieds avant
-    ax1.add_patch(Rectangle((0, 0), LEG_SECTION * s, FRONT_LEG_HEIGHT * s,
-                            fc=WOOD1, ec="black", lw=1))
-    ax1.add_patch(Rectangle(((FRONT_LEG_SPREAD - LEG_SECTION) * s, 0),
-                            LEG_SECTION * s, FRONT_LEG_HEIGHT * s,
-                            fc=WOOD1, ec="black", lw=1))
-    # Pieds arriere (plus hauts, en retrait)
-    bo = (FRONT_LEG_SPREAD - BACK_LEG_SPREAD) / 2.0
-    ax1.add_patch(Rectangle((bo * s, 0), LEG_SECTION * s, BACK_LEG_HEIGHT * s,
-                            fc=WOOD1, ec="black", lw=0.8, ls="--"))
-    ax1.add_patch(Rectangle(((bo + BACK_LEG_SPREAD - LEG_SECTION) * s, 0),
-                            LEG_SECTION * s, BACK_LEG_HEIGHT * s,
-                            fc=WOOD1, ec="black", lw=0.8, ls="--"))
-    # Assise
-    ax1.add_patch(Rectangle((0, (SEAT_HEIGHT - PLANK_THICKNESS) * s),
-                            FRONT_LEG_SPREAD * s, PLANK_THICKNESS * s,
-                            fc=WOOD2, ec="black", lw=1.2))
-    # Dossier lattes
-    for i in range(N_BACK_PLANKS):
-        pz = SEAT_HEIGHT + i * (PLANK_WIDTH + PLANK_GAP)
-        ax1.add_patch(Rectangle((bo * s + LEG_SECTION * s, pz * s),
-                                (BACK_LEG_SPREAD - 2 * LEG_SECTION) * s,
-                                PLANK_WIDTH * s,
-                                fc=WOOD3, ec="black", lw=0.6))
+    s = 0.45  # scale
+    # Pied avant
+    ax1.add_patch(Rectangle((0, 0), FRONT_LEG_D*s, FRONT_LEG_H*s,
+                            fc=W1, ec="black", lw=1.2))
+    # Pied arriere (incline dans la vue de cote)
+    back_y0 = SEAT_DEPTH - BACK_LEG_D
+    ax1.add_patch(Rectangle((back_y0*s, 0), BACK_LEG_D*s, BACK_LEG_H*s,
+                            fc=W1, ec="black", lw=1.2))
+    # Assise (lattes) - legerement inclinee
+    for i in range(3):  # representation simplifiee
+        ax1.add_patch(Rectangle((i*SEAT_DEPTH/3*s, (SEAT_FRONT_H - SLAT_THICKNESS)*s),
+                                (SEAT_DEPTH/3)*s, SLAT_THICKNESS*s,
+                                fc=W2, ec="black", lw=0.6))
+    # Dossier
+    for i in range(N_BACK_SLATS):
+        bz = SEAT_FRONT_H + 30 + i * (SLAT_WIDTH + SLAT_GAP)
+        ax1.add_patch(Rectangle((back_y0*s, bz*s),
+                                SLAT_THICKNESS*s, SLAT_WIDTH*s,
+                                fc=W3, ec="black", lw=0.6))
+    # Accoudoir
+    ax1.add_patch(Rectangle((0, ARMREST_H*s), ARMREST_L*s, ARMREST_T*s,
+                            fc=W2, ec="black", lw=1, ls="--"))
+    ax1.text(ARMREST_L*s/2, (ARMREST_H+ARMREST_T)*s+3, "Accoudoir", ha="center", fontsize=7, color=W4)
     # Traverse basse
-    ax1.add_patch(Rectangle((LEG_SECTION * s, 120 * s),
-                            (FRONT_LEG_SPREAD - 2 * LEG_SECTION) * s,
-                            BRACE_SECTION * s,
-                            fc=WOOD3, ec="black", lw=0.5))
+    ax1.add_patch(Rectangle((FRONT_LEG_D*s, 100*s),
+                            (back_y0-FRONT_LEG_D)*s, BRACE_T*s,
+                            fc=W3, ec="black", lw=0.5))
     # Cotes
-    _add_dim_h(ax1, 0, FRONT_LEG_SPREAD * s, total_h * s,
-               f"{FRONT_LEG_SPREAD:.0f} mm", offset=8)
-    _add_dim_v(ax1, FRONT_LEG_SPREAD * s, 0, SEAT_HEIGHT * s,
-               f"{SEAT_HEIGHT:.0f}", offset=10)
-    _add_dim_v(ax1, FRONT_LEG_SPREAD * s + 25, 0, BACK_LEG_HEIGHT * s,
-               f"{BACK_LEG_HEIGHT:.0f}", offset=0)
+    _add_dim_h(ax1, 0, SEAT_DEPTH*s, BACK_LEG_H*s, f"{SEAT_DEPTH:.0f} mm", offset=8)
+    _add_dim_v(ax1, SEAT_DEPTH*s, 0, SEAT_FRONT_H*s, f"{SEAT_FRONT_H:.0f}", offset=10)
+    _add_dim_v(ax1, SEAT_DEPTH*s+20, 0, BACK_LEG_H*s, f"{BACK_LEG_H:.0f}", offset=0)
+    # Angle dossier
+    ax1.text(back_y0*s+15, (SEAT_FRONT_H+100)*s, f"~{BACKREST_ANGLE:.0f}deg",
+             fontsize=8, color="red", fontweight="bold")
 
-    ax1.set_xlim(-20, FRONT_LEG_SPREAD * s + 55)
-    ax1.set_ylim(-15, total_h * s + 30)
+    ax1.set_xlim(-15, SEAT_DEPTH*s+50)
+    ax1.set_ylim(-15, BACK_LEG_H*s+30)
     ax1.grid(True, alpha=0.2)
-    ax1.set_xlabel("mm")
-    ax1.set_ylabel("mm")
+    ax1.set_xlabel("mm"); ax1.set_ylabel("mm")
 
-    # ===================== VUE DE COTE =====================
-    ax2 = fig.add_axes([0.36, 0.38, 0.28, 0.52])
-    ax2.set_title("Vue de cote", fontsize=10)
+    # ===================== VUE DE FACE =====================
+    ax2 = fig.add_axes([0.38, 0.38, 0.28, 0.52])
+    ax2.set_title("Vue de face", fontsize=10)
     ax2.set_aspect("equal")
 
-    # Pied avant
-    ax2.add_patch(Rectangle((0, 0), LEG_SECTION * s, FRONT_LEG_HEIGHT * s,
-                            fc=WOOD1, ec="black", lw=1))
-    # Pied arriere
-    ax2.add_patch(Rectangle(((SEAT_DEPTH - LEG_SECTION) * s, 0),
-                            LEG_SECTION * s, BACK_LEG_HEIGHT * s,
-                            fc=WOOD1, ec="black", lw=1))
+    s2 = 0.4
+    # Pieds avant
+    ax2.add_patch(Rectangle((0, 0), FRONT_LEG_W*s2, FRONT_LEG_H*s2,
+                            fc=W1, ec="black", lw=1))
+    ax2.add_patch(Rectangle(((CHAIR_WIDTH-FRONT_LEG_W)*s2, 0),
+                            FRONT_LEG_W*s2, FRONT_LEG_H*s2,
+                            fc=W1, ec="black", lw=1))
+    # Pieds arriere (en retrait, pointilles)
+    t = STACK_TAPER
+    ax2.add_patch(Rectangle((t*s2, 0), BACK_LEG_W*s2, BACK_LEG_H*s2,
+                            fc=W1, ec="black", lw=0.7, ls="--", alpha=0.5))
+    ax2.add_patch(Rectangle(((CHAIR_WIDTH-BACK_LEG_W-t)*s2, 0),
+                            BACK_LEG_W*s2, BACK_LEG_H*s2,
+                            fc=W1, ec="black", lw=0.7, ls="--", alpha=0.5))
     # Assise
-    ax2.add_patch(Rectangle((0, (SEAT_HEIGHT - PLANK_THICKNESS) * s),
-                            SEAT_DEPTH * s, PLANK_THICKNESS * s,
-                            fc=WOOD2, ec="black", lw=1.2))
-    # Dossier
-    for i in range(N_BACK_PLANKS):
-        pz = SEAT_HEIGHT + i * (PLANK_WIDTH + PLANK_GAP)
-        ax2.add_patch(Rectangle(((SEAT_DEPTH - LEG_SECTION) * s, pz * s),
-                                PLANK_THICKNESS * s, PLANK_WIDTH * s,
-                                fc=WOOD3, ec="black", lw=0.6))
-    # Traverse laterale
-    tz = SEAT_HEIGHT - PLANK_THICKNESS - BRACE_SECTION
-    ax2.add_patch(Rectangle((LEG_SECTION * s, tz * s),
-                            (SEAT_DEPTH - 2 * LEG_SECTION) * s, BRACE_SECTION * s,
-                            fc=WOOD3, ec="black", lw=0.5))
+    ax2.add_patch(Rectangle((0, (SEAT_FRONT_H-SLAT_THICKNESS)*s2),
+                            CHAIR_WIDTH*s2, SLAT_THICKNESS*s2,
+                            fc=W2, ec="black", lw=1))
+    # Accoudoirs
+    for ax_x in [0, (CHAIR_WIDTH-ARMREST_W)*s2]:
+        ax2.add_patch(Rectangle((ax_x, ARMREST_H*s2),
+                                ARMREST_W*s2, ARMREST_T*s2,
+                                fc=W2, ec="black", lw=0.8))
+    # Dossier lattes
+    for i in range(N_BACK_SLATS):
+        bz = SEAT_FRONT_H + 30 + i * (SLAT_WIDTH + SLAT_GAP)
+        bw = SEAT_WIDTH - 2*BACK_LEG_W + 2*t
+        bx0 = (CHAIR_WIDTH - bw) / 2
+        ax2.add_patch(Rectangle((bx0*s2, bz*s2), bw*s2, SLAT_WIDTH*s2,
+                                fc=W3, ec="black", lw=0.5))
+    # Traverse basse
+    ax2.add_patch(Rectangle((FRONT_LEG_W*s2, 100*s2),
+                            (CHAIR_WIDTH-2*FRONT_LEG_W)*s2, BRACE_T*s2,
+                            fc=W3, ec="black", lw=0.5))
     # Cotes
-    _add_dim_h(ax2, 0, SEAT_DEPTH * s, total_h * s,
-               f"{SEAT_DEPTH:.0f} mm", offset=8)
-    _add_dim_v(ax2, SEAT_DEPTH * s, 0, SEAT_HEIGHT * s,
-               f"{SEAT_HEIGHT:.0f}", offset=10)
+    _add_dim_h(ax2, 0, CHAIR_WIDTH*s2, BACK_LEG_H*s2, f"{CHAIR_WIDTH:.0f} mm", offset=8)
+    _add_dim_v(ax2, CHAIR_WIDTH*s2, 0, ARMREST_H*s2, f"{ARMREST_H:.0f}", offset=12)
 
-    ax2.set_xlim(-15, SEAT_DEPTH * s + 40)
-    ax2.set_ylim(-15, total_h * s + 30)
+    ax2.set_xlim(-15, CHAIR_WIDTH*s2+40)
+    ax2.set_ylim(-15, BACK_LEG_H*s2+30)
     ax2.grid(True, alpha=0.2)
-    ax2.set_xlabel("mm")
-    ax2.set_ylabel("mm")
+    ax2.set_xlabel("mm"); ax2.set_ylabel("mm")
 
-    # ===================== VUE EMPILAGE =====================
-    ax3 = fig.add_axes([0.68, 0.38, 0.28, 0.52])
-    ax3.set_title("Vue empilage (face)", fontsize=10)
+    # ===================== VUE DESSUS =====================
+    ax3 = fig.add_axes([0.70, 0.38, 0.27, 0.52])
+    ax3.set_title("Vue de dessus", fontsize=10)
     ax3.set_aspect("equal")
 
-    colors = [(WOOD1, WOOD2), (WOOD4, WOOD3)]
-    for chair_idx in range(2):
-        offset_x = chair_idx * ((FRONT_LEG_SPREAD - BACK_LEG_SPREAD) / 2.0 + STACK_CLEARANCE)
-        offset_z = chair_idx * (PLANK_THICKNESS + BRACE_SECTION + STACK_CLEARANCE)
-        c1, c2 = colors[chair_idx]
-        alpha = 0.8 if chair_idx == 0 else 0.6
-        s2 = 0.4
-        # Pieds avant
-        ax3.add_patch(Rectangle((offset_x * s2, offset_z * s2),
-                                LEG_SECTION * s2, FRONT_LEG_HEIGHT * s2,
-                                fc=c1, ec="black", lw=0.8, alpha=alpha))
-        ax3.add_patch(Rectangle(((offset_x + FRONT_LEG_SPREAD - LEG_SECTION) * s2, offset_z * s2),
-                                LEG_SECTION * s2, FRONT_LEG_HEIGHT * s2,
-                                fc=c1, ec="black", lw=0.8, alpha=alpha))
-        # Assise
-        ax3.add_patch(Rectangle((offset_x * s2, (offset_z + SEAT_HEIGHT - PLANK_THICKNESS) * s2),
-                                FRONT_LEG_SPREAD * s2, PLANK_THICKNESS * s2,
-                                fc=c2, ec="black", lw=0.8, alpha=alpha))
-        label = f"Chaise {chair_idx + 1}" if chair_idx < 2 else ""
-        ax3.text((offset_x + FRONT_LEG_SPREAD / 2) * s2,
-                 (offset_z + SEAT_HEIGHT / 2) * s2,
-                 label, ha="center", va="center", fontsize=7, color="white",
-                 fontweight="bold")
+    s3 = 0.12
+    # Accoudoirs
+    ax3.add_patch(Rectangle((0, 0), ARMREST_W*s3, ARMREST_L*s3,
+                            fc=W2, ec="black", lw=0.8))
+    ax3.add_patch(Rectangle(((CHAIR_WIDTH-ARMREST_W)*s3, 0),
+                            ARMREST_W*s3, ARMREST_L*s3,
+                            fc=W2, ec="black", lw=0.8))
+    # Lattes assise
+    total_sw = N_SEAT_SLATS * SLAT_WIDTH + (N_SEAT_SLATS-1) * SLAT_GAP
+    ss = (CHAIR_WIDTH - total_sw) / 2
+    colors = [W2, W1, W3, W2, W1, W3]
+    for i in range(N_SEAT_SLATS):
+        sx = ss + i * (SLAT_WIDTH + SLAT_GAP)
+        ax3.add_patch(Rectangle((sx*s3, ARMREST_W*s3*0.3), SLAT_WIDTH*s3, SEAT_DEPTH*s3,
+                                fc=colors[i%len(colors)], ec="black", lw=0.4))
+    # Cotes
+    _add_dim_h(ax3, 0, CHAIR_WIDTH*s3, ARMREST_L*s3, f"{CHAIR_WIDTH:.0f} mm", offset=5)
+    _add_dim_v(ax3, CHAIR_WIDTH*s3, 0, ARMREST_L*s3, f"{ARMREST_L:.0f} mm", offset=8)
 
-    ax3.set_xlim(-10, 300)
-    ax3.set_ylim(-10, total_h * s2 + 40)
+    ax3.set_xlim(-8, CHAIR_WIDTH*s3+25)
+    ax3.set_ylim(-8, ARMREST_L*s3+20)
     ax3.grid(True, alpha=0.2)
-    ax3.set_xlabel("mm")
+    ax3.set_xlabel("mm"); ax3.set_ylabel("mm")
 
     # ===================== CARTOUCHE =====================
     ax_info = fig.add_axes([0.04, 0.04, 0.92, 0.26])
     ax_info.axis("off")
     info = (
-        "Objet : Chaise de Jardin Empilable en Palettes Recyclees\n"
-        f"Dimensions : {FRONT_LEG_SPREAD:.0f} x {SEAT_DEPTH:.0f} x {BACK_LEG_HEIGHT:.0f} mm "
-        f"(L x P x H)  |  Assise : {SEAT_HEIGHT:.0f} mm\n"
-        f"Assise : {N_SEAT_PLANKS} lattes de {PLANK_WIDTH:.0f} x {PLANK_THICKNESS:.0f} mm  |  "
-        f"Dossier : {N_BACK_PLANKS} lattes de {PLANK_WIDTH:.0f} x {PLANK_THICKNESS:.0f} mm\n"
-        f"Pieds avant : {LEG_SECTION:.0f} x {LEG_SECTION:.0f} x {FRONT_LEG_HEIGHT:.0f} mm  |  "
-        f"Pieds arriere : {LEG_SECTION:.0f} x {LEG_SECTION:.0f} x {BACK_LEG_HEIGHT:.0f} mm\n"
-        "Materiau : Euro-palette recyclee  |  Echelle : 1:1 (mm)\n"
+        "Objet : Deck Chair de Jardin en Palettes Recyclees (style Adirondack)\n"
+        f"Dimensions : {CHAIR_WIDTH:.0f} x {SEAT_DEPTH:.0f} x {BACK_LEG_H:.0f} mm "
+        f"(L x P x H)  |  Assise : {SEAT_FRONT_H:.0f} mm  |  Accoudoirs : {ARMREST_H:.0f} mm\n"
+        f"Assise : {N_SEAT_SLATS} lattes de {SLAT_WIDTH:.0f} x {SLAT_THICKNESS:.0f} mm  |  "
+        f"Dossier : {N_BACK_SLATS} lattes, incline ~{BACKREST_ANGLE:.0f} deg\n"
+        f"Accoudoirs : {ARMREST_W:.0f} x {ARMREST_L:.0f} x {ARMREST_T:.0f} mm  |  "
+        f"Pieds avant : {FRONT_LEG_H:.0f} mm  |  Pieds arriere : {BACK_LEG_H:.0f} mm\n"
+        "Materiau : 1.5 euro-palettes recyclees  |  Echelle : 1:1 (mm)\n"
         "Inspire de : instructables.com/A-Deck-Chair-Made-From-Pallet-Wood-Leftovers"
     )
     ax_info.text(0.5, 0.5, info, transform=ax_info.transAxes,
