@@ -28,16 +28,22 @@ jobs:
       - name: Install dependencies
         run: pip install numpy numpy-stl matplotlib
 
-      - name: Generate table basse outputs
-        working-directory: table_basse_palette
+      - name: Generate project outputs
         run: |
-          python generate_table.py
-          python generate_guide.py
+          for dir in */; do
+            if [ -f "${dir}generate_table.py" ]; then
+              echo "=== Building ${dir} ==="
+              cd "$dir"
+              python generate_table.py
+              [ -f generate_guide.py ] && python generate_guide.py
+              cd ..
+            fi
+          done
 
-      - name: Verify generated files
+      - name: List site contents
         run: |
-          echo "=== Generated files ==="
-          ls -lh table_basse_palette/*.stl table_basse_palette/*.pdf
+          echo "=== Site files ==="
+          find . -name "*.html" -o -name "*.pdf" -o -name "*.stl" | sort
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
