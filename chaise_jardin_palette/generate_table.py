@@ -126,12 +126,18 @@ def generate_stl():
         all_faces.extend(_box_faces(0, sy, PANEL_H,
                                     CHAIR_WIDTH, SLAT_W, SLAT_T))
 
-    # === SUPPORTS DOSSIER (x2) - inclines, centres sur les panneaux ===
+    # === MONTANTS D'ANCRAGE DOSSIER (x2) - verticaux, boulonnes au panneau ===
     back_y = SEAT_DEPTH
     for side_x in [0, CHAIR_WIDTH - PANEL_W]:
         bx = side_x + (PANEL_W - FRAME_W) / 2
+        all_faces.extend(_box_faces(bx, back_y, 0,
+                                    FRAME_W, FRAME_D, SEAT_H))
+
+    # === SUPPORTS DOSSIER (x2) - inclines, sur les montants d'ancrage ===
+    for side_x in [0, CHAIR_WIDTH - PANEL_W]:
+        bx = side_x + (PANEL_W - FRAME_W) / 2
         all_faces.extend(_tilted_box_faces(
-            bx, back_y, PANEL_H + SLAT_T,
+            bx, back_y, SEAT_H,
             FRAME_W, FRAME_D, BACK_LENGTH, BACKREST_TILT))
 
     # === LATTES DE DOSSIER (x5) - entre les panneaux lateraux ===
@@ -211,9 +217,13 @@ def generate_pdf():
         ax1.add_patch(Rectangle((sy*s, PANEL_H*s),
                                 SLAT_W*s, SLAT_T*s, fc=W2, ec="black", lw=0.6))
 
-    # Support dossier (incline)
+    # Montant d'ancrage dossier (vertical)
     back_y0 = SEAT_DEPTH * s
-    seat_top = (PANEL_H + SLAT_T) * s
+    seat_top = SEAT_H * s
+    ax1.add_patch(Rectangle((back_y0, 0), FRAME_D*s, SEAT_H*s,
+                             fc=W4, ec="black", lw=1.0))
+
+    # Support dossier (incline)
     back_pts = [
         [back_y0, seat_top],
         [back_y0 + FRAME_D*s, seat_top],
@@ -265,7 +275,12 @@ def generate_pdf():
     ax2.add_patch(Rectangle((0, PANEL_H*s2), CHAIR_WIDTH*s2, SLAT_T*s2,
                              fc=W2, ec="black", lw=1))
 
-    # Supports dossier (pointilles, en retrait)
+    # Montants d'ancrage (vertical, derriere les panneaux)
+    for px in [0, (CHAIR_WIDTH - PANEL_W)*s2]:
+        bx = px + ((PANEL_W - FRAME_W)/2)*s2
+        ax2.add_patch(Rectangle((bx, 0), FRAME_W*s2, SEAT_H*s2,
+                                 fc=W4, ec="black", lw=0.6, ls="--", alpha=0.5))
+    # Supports dossier (inclines, en retrait)
     for px in [0, (CHAIR_WIDTH - PANEL_W)*s2]:
         bx = px + ((PANEL_W - FRAME_W)/2)*s2
         ax2.add_patch(Rectangle((bx, SEAT_H*s2), FRAME_W*s2, BACK_DZ*s2,
@@ -326,7 +341,7 @@ def generate_pdf():
     # ===================== CARTOUCHE =====================
     ax_info = fig.add_axes([0.04, 0.04, 0.92, 0.26])
     ax_info.axis("off")
-    n_pieces = N_SEAT_SLATS + N_BACK_SLATS + 4 + 6 + 2 + 1  # A+B+C/D+E+F+G
+    n_pieces = N_SEAT_SLATS + N_BACK_SLATS + 4 + 6 + 2 + 2 + 1  # A+B+C/D+E+F+G+H
     info = (
         "Objet : Deck Chair de Jardin en Palettes Recyclees\n"
         f"Dimensions : {CHAIR_WIDTH:.0f} x {RUNNER_L:.0f} x {TOTAL_H:.0f} mm "
@@ -334,6 +349,7 @@ def generate_pdf():
         f"Assise : {N_SEAT_SLATS} lattes de {SLAT_W:.0f} x {SLAT_T:.0f} mm  |  "
         f"Dossier : {N_BACK_SLATS} lattes, incline ~{90 + BACKREST_TILT:.0f} deg\n"
         f"Panneaux lateraux style palette (planche + blocs {BLOCK_H:.0f} mm + planche)\n"
+        f"Montants d'ancrage verticaux ({SEAT_H:.0f} mm) boulonnes aux panneaux\n"
         f"Sans accoudoirs  |  Longerons depassent de {RUNNER_EXTEND:.0f} mm "
         f"a l'arriere\n"
         f"Materiau : 1 euro-palette  |  {n_pieces} pieces  |  Echelle 1:1 (mm)\n"

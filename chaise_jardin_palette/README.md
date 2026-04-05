@@ -30,7 +30,8 @@ par Well Done Tips sur Instructables. Adaptee pour accompagner la table basse pa
 | Dossier | 5 lattes de 410 x 95 x 22 mm |
 | Supports dossier | 650 x 70 x 44 mm |
 | Blocs lateraux | 44 x 44 x 78 mm |
-| Pieces totales | 22 (7 references) |
+| Montants ancrage | 144 x 70 x 44 mm |
+| Pieces totales | 24 (8 references) |
 
 ## Fichiers
 

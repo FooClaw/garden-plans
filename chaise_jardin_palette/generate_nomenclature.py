@@ -1,6 +1,6 @@
 """Generateur de nomenclature PDF - Deck Chair de jardin.
 
-Structure palette : panneaux lateraux + blocs. 22 pieces, 1 palette.
+Structure palette : panneaux lateraux + blocs + montants d'ancrage. 24 pieces, 1 palette.
 """
 import math
 import os
@@ -34,6 +34,7 @@ PIECES = [
     ("E", "Bloc lateral", 6, f"44 x 44 x {BLOCK_H:.0f}", "Blocs de palette", WOOD4),
     ("F", "Support dossier", 2, "650 x 70 x 44", "2 lattes collees", WOOD1),
     ("G", "Traverse avant", 1, f"{INNER_W:.0f} x 44 x 22", "Latte recoupee", WOOD3),
+    ("H", "Montant ancrage dossier", 2, f"{SEAT_H:.0f} x 70 x 44", "2 lattes collees", WOOD4),
 ]
 
 TOOLS = [
@@ -55,7 +56,8 @@ ASSEMBLY = [
     ("Panneaux lat.", "Planche basse + 3 blocs + planche haute (x2)"),
     ("Traverses", "Visser traverse avant G entre les panneaux"),
     ("Assise", f"Visser {N_SEAT} lattes A (espacement {SLAT_GAP:.0f} mm)"),
-    ("Supports", "Coller et fixer supports dossier F (angle 35 deg)"),
+    ("Montants", "Boulonner montants H a travers panneaux lateraux"),
+    ("Supports", "Fixer supports dossier F sur montants H (angle 35 deg)"),
     ("Dossier", f"Visser {N_BACK} lattes B sur supports dossier"),
     ("Finition", "Huile de lin, vernis ou lasure"),
 ]
@@ -77,7 +79,7 @@ def page_cover(pdf):
         ("Dimensions", f"600 x {RUNNER_L:.0f} x {TOTAL_H:.0f} mm (L x P x H)"),
         ("Assise", f"{SEAT_H:.0f} mm (tres basse, style transat)"),
         ("Dossier", f"Incline a ~{90+BACKREST_TILT} degres"),
-        ("Pieces", f"{sum(p[2] for p in PIECES)} pieces (7 references)"),
+        ("Pieces", f"{sum(p[2] for p in PIECES)} pieces (8 references)"),
     ]
     for i, (label, value) in enumerate(summary):
         y = 110 - i * 5

@@ -39,7 +39,7 @@ def new_page(pdf, title, subtitle=None):
     return fig, ax
 
 def draw_side(ax, x0, y0, s=0.04):
-    """Vue de cote avec panneaux palette."""
+    """Vue de cote avec panneaux palette et montants d'ancrage."""
     # Planche basse
     ax.add_patch(Rectangle((x0, y0), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
     # Blocs
@@ -47,10 +47,12 @@ def draw_side(ax, x0, y0, s=0.04):
         ax.add_patch(Rectangle((x0+by*s, y0+SLAT_T*s), BLOCK_W*s, BLOCK_H*s, fc=WOOD4, ec="black", lw=0.6))
     # Planche haute
     ax.add_patch(Rectangle((x0, y0+(SLAT_T+BLOCK_H)*s), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
+    # Montant d'ancrage dossier (vertical, du sol a l'assise)
+    ax.add_patch(Rectangle((x0+SEAT_DEPTH*s, y0), FRAME_D*s, SEAT_H*s, fc=WOOD4, ec="black", lw=0.8))
     # Assise
     ax.add_patch(Rectangle((x0, y0+PANEL_H*s), SEAT_DEPTH*s, SLAT_T*s, fc=WOOD2, ec="black", lw=0.8))
-    # Support dossier
-    seat_top = (PANEL_H + SLAT_T) * s
+    # Support dossier (incline, sur le montant)
+    seat_top = SEAT_H * s
     pts = [
         [x0+SEAT_DEPTH*s, y0+seat_top],
         [x0+SEAT_DEPTH*s+FRAME_D*s, y0+seat_top],
@@ -89,7 +91,7 @@ def page_materials(pdf):
     ax.add_patch(Rectangle((30, 105), 40, 12, fc="#f0dcc0", ec="black", lw=1))
     for i in range(5):
         ax.add_patch(Rectangle((31, 106.5+i*2), 38, 1.5, fc=WOOD1, ec="black", lw=0.4))
-    ax.text(50, 102, "1 palette suffit (22 pieces)", ha="center", fontsize=8)
+    ax.text(50, 102, "1 palette suffit (24 pieces)", ha="center", fontsize=8)
     ax.text(50, 96, "Choisir une palette marquee HT", ha="center", fontsize=9, color="green")
     tools = ["Pied-de-biche / levier", "Arrache-clou / tenaille", "Scie circulaire + guide",
              "Scie a onglet", "Ponceuse orbitale (80, 120, 180)", "Visseuse + vis 4x50 mm",
@@ -128,6 +130,7 @@ def page_cutting(pdf):
         ("E", "Bloc lateral x6", f"44 x 44 x {BLOCK_H}", WOOD4, 8),
         ("F", "Support dossier x2", f"650 x 70 x 44", WOOD1, 65),
         ("G", "Traverse avant x1", f"{INNER_W} x 44 x 22", WOOD3, 41),
+        ("H", "Montant ancrage x2", f"{SEAT_H} x 70 x 44", WOOD4, 14),
     ]
     for i, (ref, name, dims, color, w) in enumerate(pieces):
         y = 118 - i * 11
@@ -179,17 +182,35 @@ def page_seat(pdf):
     ax.text(50, 45, f"Hauteur d'assise : seulement {SEAT_H} mm !", ha="center", fontsize=10, fontweight="bold", color=WOOD4)
     pdf.savefig(fig); plt.close(fig)
 
+def page_anchors(pdf):
+    fig, ax = new_page(pdf, "Etape 5 : Montants d'ancrage dossier")
+    ax.text(50, 125, "Boulonner les 2 montants (H) a travers les panneaux lateraux", ha="center", fontsize=10, color="#666")
+    s = 0.055
+    x0 = 10; y0 = 75
+    # Panneau lateral (simplifie)
+    ax.add_patch(Rectangle((x0, y0), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
+    ax.add_patch(Rectangle((x0, y0+(SLAT_T+BLOCK_H)*s), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
+    # Montant d'ancrage (mis en evidence)
+    ax.add_patch(Rectangle((x0+SEAT_DEPTH*s, y0), FRAME_D*s, SEAT_H*s, fc=WOOD4, ec="red", lw=2.5))
+    ax.text(x0+SEAT_DEPTH*s+FRAME_D*s/2, y0+SEAT_H*s/2, "H", ha="center", va="center", fontsize=12, fontweight="bold", color="white")
+    ax.annotate("Montant H\n144 x 70 x 44 mm\nBoulonne au panneau", xy=(x0+SEAT_DEPTH*s+FRAME_D*s+2, y0+SEAT_H*s/2), fontsize=9, color="red", fontweight="bold")
+    ax.text(50, y0-8, "Le montant va du sol au niveau de l'assise", ha="center", fontsize=10, fontweight="bold", color=WOOD4)
+    ax.text(50, y0-14, "Boulons M8 traversant panneau + montant (2 par cote)", ha="center", fontsize=9, color="#555")
+    ax.text(50, y0-20, "Ancrage solide pour supporter le poids du dossier", ha="center", fontsize=9, color="#555")
+    pdf.savefig(fig); plt.close(fig)
+
 def page_back_supports(pdf):
-    fig, ax = new_page(pdf, "Etape 5 : Supports dossier")
-    ax.text(50, 125, "Fixer les 2 supports dossier (F) a l'arriere des panneaux", ha="center", fontsize=10, color="#666")
+    fig, ax = new_page(pdf, "Etape 6 : Supports dossier")
+    ax.text(50, 125, "Fixer les 2 supports dossier (F) sur les montants (H)", ha="center", fontsize=10, color="#666")
     draw_side(ax, 10, 65, 0.055)
     ax.annotate("Support dossier (F)\n650 x 70 x 44 mm\nAngle ~35 deg", xy=(55, 95), fontsize=9, color=WOOD4, fontweight="bold")
     ax.text(50, 58, "2 lattes collees face a face (section 44 x 70 mm)", ha="center", fontsize=10)
     ax.text(50, 52, f"Angle : ~{BACKREST_TILT} deg de la verticale  |  Utiliser une fausse equerre", ha="center", fontsize=9, color="red")
+    ax.text(50, 46, "Les supports F reposent sur les montants H (ancrage solide)", ha="center", fontsize=9, fontweight="bold", color=WOOD4)
     pdf.savefig(fig); plt.close(fig)
 
 def page_backrest(pdf):
-    fig, ax = new_page(pdf, "Etape 6 : Pose du dossier")
+    fig, ax = new_page(pdf, "Etape 7 : Pose du dossier")
     ax.text(50, 125, f"Visser les {N_BACK} lattes (B) sur les supports", ha="center", fontsize=10, color="#666")
     s = 0.04
     x0 = 15; y0 = 60
@@ -207,7 +228,7 @@ def page_backrest(pdf):
     pdf.savefig(fig); plt.close(fig)
 
 def page_finishing(pdf):
-    fig, ax = new_page(pdf, "Etape 7 : Finition")
+    fig, ax = new_page(pdf, "Etape 8 : Finition")
     ax.text(50, 125, "Proteger et embellir votre deck chair", ha="center", fontsize=11, color="#666")
     draw_front(ax, 25, 90, 0.04)
     options = [
@@ -239,7 +260,7 @@ def page_final(pdf):
         "Panneaux lateraux style palette (blocs 78 mm)",
         "Sans accoudoirs (design minimaliste)",
         f"Longerons depassent de {RUNNER_EXTEND} mm a l'arriere",
-        "22 pieces au total",
+        "24 pieces au total",
     ]
     for i, line in enumerate(summary):
         ax.text(15, 68 - i*5, f"  {line}", fontsize=9)
@@ -254,6 +275,7 @@ def generate_guide():
         page_cutting(pdf)
         page_panels(pdf)
         page_seat(pdf)
+        page_anchors(pdf)
         page_back_supports(pdf)
         page_backrest(pdf)
         page_finishing(pdf)

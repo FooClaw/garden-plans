@@ -5,6 +5,7 @@
 Il faut **1 euro-palette standard** (1200 x 800 mm) pour realiser 1 chaise.
 Choisir une palette marquee **HT** (traitement thermique, sans produit chimique).
 **Important** : conserver les blocs de palette (78 mm de haut) pour les panneaux lateraux.
+24 pieces au total (8 references A-H).
 
 ---
 
@@ -19,7 +20,8 @@ Choisir une palette marquee **HT** (traitement thermique, sans produit chimique)
 | E | Bloc lateral | 6 | 44 x 44 x 78 | Blocs de palette |
 | F | Support dossier | 2 | 650 x 70 x 44 | 2 lattes collees |
 | G | Traverse avant | 1 | 410 x 44 x 22 | Latte recoupee |
-| | **Total pieces** | **22** | | **1 palette** |
+| H | Montant ancrage dossier | 2 | 144 x 70 x 44 | 2 lattes collees |
+| | **Total pieces** | **24** | | **1 palette** |
 
 ---
 
@@ -61,9 +63,16 @@ Hauteur d'assise (avec latte) : 122 + 22 = **144 mm**.
 
 ### Ref. F - Supports dossier (x2)
 - **650 x 70 x 44 mm** - 2 lattes collees face a face
-- S'inclinent a ~35 deg de la verticale depuis l'arriere des panneaux
+- S'inclinent a ~35 deg de la verticale depuis le haut des montants H
 
 ### Ref. G - Traverse avant (x1)
+- **410 x 44 x 22 mm** - Latte recoupee et refendue
+- Relie les panneaux sous l'assise
+
+### Ref. H - Montants d'ancrage dossier (x2)
+- **144 x 70 x 44 mm** - 2 lattes collees face a face
+- Verticaux, boulonnes a travers les panneaux lateraux a l'arriere de l'assise
+- Servent de base solide aux supports dossier inclines (F)
 - **410 x 44 x 22 mm** - Latte recoupee et refendue
 - Relie les panneaux sous l'assise
 
@@ -93,8 +102,9 @@ Hauteur d'assise (avec latte) : 122 + 22 = **144 mm**.
 4. **Panneaux lateraux** : Planche basse + 3 blocs + planche haute (x2)
 5. **Traverse** : Visser traverse avant G entre les panneaux
 6. **Assise** : Visser 4 lattes A (espacement 15 mm)
-7. **Supports dossier** : Coller et fixer supports F (angle ~35 deg)
-8. **Dossier** : Visser 5 lattes B sur les supports
+7. **Montants d'ancrage** : Boulonner montants H a travers les panneaux lateraux
+8. **Supports dossier** : Fixer supports F sur les montants H (angle ~35 deg)
+9. **Dossier** : Visser 5 lattes B sur les supports
 9. **Finition** : Huile de lin, vernis ou lasure
 
 ---
