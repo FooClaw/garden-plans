@@ -1,6 +1,6 @@
 """Generateur de nomenclature PDF - Deck Chair de jardin.
 
-Structure palette : panneaux lateraux + blocs + montants d'ancrage. 24 pieces, 1 palette.
+Structure palette : panneaux lateraux + blocs + supports continus. 22 pieces, 1 palette.
 """
 import math
 import os
@@ -22,9 +22,10 @@ N_SEAT = 4; N_BACK = 5
 SEAT_DEPTH = N_SEAT * SLAT_W + (N_SEAT - 1) * SLAT_GAP
 RUNNER_EXTEND = 350; RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND
 BACKREST_TILT = 35; BACK_LENGTH = 650
-FRAME_W = 44; INNER_W = 600 - 2 * PANEL_W
+FRAME_W = 44; FRAME_D = 70; INNER_W = 600 - 2 * PANEL_W
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
 TOTAL_H = SEAT_H + BACK_DZ
+SUPPORT_FULL_L = TOTAL_H / math.cos(math.radians(BACKREST_TILT))
 
 PIECES = [
     ("A", "Latte assise", 4, "600 x 95 x 22", "Lattes pleine largeur", WOOD2),
@@ -32,9 +33,8 @@ PIECES = [
     ("C", "Planche lat. basse", 2, f"{RUNNER_L:.0f} x 95 x 22", "Lattes pleine largeur", WOOD1),
     ("D", "Planche lat. haute", 2, f"{RUNNER_L:.0f} x 95 x 22", "Lattes pleine largeur", WOOD1),
     ("E", "Bloc lateral", 6, f"44 x 44 x {BLOCK_H:.0f}", "Blocs de palette", WOOD4),
-    ("F", "Support dossier", 2, "650 x 70 x 44", "2 lattes collees", WOOD1),
+    ("F", "Support dossier", 2, f"{SUPPORT_FULL_L:.0f} x 70 x 44", "2 lattes collees", WOOD1),
     ("G", "Traverse avant", 1, f"{INNER_W:.0f} x 44 x 22", "Latte recoupee", WOOD3),
-    ("H", "Montant ancrage dossier", 2, f"{SEAT_H:.0f} x 70 x 44", "2 lattes collees", WOOD4),
 ]
 
 TOOLS = [
@@ -56,8 +56,7 @@ ASSEMBLY = [
     ("Panneaux lat.", "Planche basse + 3 blocs + planche haute (x2)"),
     ("Traverses", "Visser traverse avant G entre les panneaux"),
     ("Assise", f"Visser {N_SEAT} lattes A (espacement {SLAT_GAP:.0f} mm)"),
-    ("Montants", "Boulonner montants H a travers panneaux lateraux"),
-    ("Supports", "Fixer supports dossier F sur montants H (angle 35 deg)"),
+    ("Supports", "Boulonner supports F a travers panneaux (angle 35 deg)"),
     ("Dossier", f"Visser {N_BACK} lattes B sur supports dossier"),
     ("Finition", "Huile de lin, vernis ou lasure"),
 ]
@@ -79,7 +78,7 @@ def page_cover(pdf):
         ("Dimensions", f"600 x {RUNNER_L:.0f} x {TOTAL_H:.0f} mm (L x P x H)"),
         ("Assise", f"{SEAT_H:.0f} mm (tres basse, style transat)"),
         ("Dossier", f"Incline a ~{90+BACKREST_TILT} degres"),
-        ("Pieces", f"{sum(p[2] for p in PIECES)} pieces (8 references)"),
+        ("Pieces", f"{sum(p[2] for p in PIECES)} pieces (7 references)"),
     ]
     for i, (label, value) in enumerate(summary):
         y = 110 - i * 5
