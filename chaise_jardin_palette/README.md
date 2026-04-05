@@ -1,31 +1,32 @@
 # Deck Chair de Jardin en Palettes Recyclees
 
-Chaise de jardin type deck chair / Adirondack, 100% bois de palette.
-Design classique avec assise basse, dossier recline et accoudoirs larges.
+Chaise de jardin type deck chair, 100% bois de palette.
+Design minimaliste : assise tres basse, dossier incline, sans accoudoirs.
 
-Inspiree du projet [A Deck Chair Made From Pallet Wood Leftovers](https://www.instructables.com/A-Deck-Chair-Made-From-Pallet-Wood-Leftovers/)
-sur Instructables, adaptee pour accompagner la table basse palette (450 mm).
+Fidellement inspire du projet [A Deck Chair Made From Pallet Wood Leftovers](https://www.instructables.com/A-Deck-Chair-Made-From-Pallet-Wood-Leftovers/)
+par Well Done Tips sur Instructables. Adaptee pour accompagner la table basse palette (450 mm).
 
 ## Design
 
-- Assise basse et legerement inclinee (350 mm)
-- Dossier recline a ~110 degres
-- Accoudoirs larges (95 mm) pour poser un verre
-- Pieds arriere d'une seule piece (sol → haut du dossier, 900 mm)
-- Empilable grace au retrecissement des pieds arriere
+- Assise tres basse (250 mm) - style transat
+- Dossier incline a ~115 degres - position detendue
+- Pas d'accoudoirs - design epure et minimaliste
+- Lattes pleine largeur (95 mm, non refendues)
+- Longerons au sol depassant a l'arriere pour la stabilite
+- Supports dossier inclines fixes sur les longerons
 
 ## Dimensions
 
 | Element | Dimensions |
 |---------|-----------|
-| Chaise (L x P x H) | 600 x 480 x 900 mm |
-| Hauteur assise | 350 mm |
-| Angle dossier | ~110 degres |
-| Assise | 6 lattes de 70 x 22 mm |
-| Dossier | 5 lattes de 70 x 22 mm |
-| Accoudoirs | 550 x 95 x 22 mm |
-| Pieds avant | 44 x 70 x 350 mm |
-| Pieds arriere | 44 x 70 x 900 mm |
+| Chaise (L x P x H) | 600 x 699 x 703 mm |
+| Hauteur assise | 250 mm |
+| Angle dossier | ~115 degres |
+| Assise | 5 lattes de 95 x 22 mm |
+| Dossier | 4 lattes de 95 x 22 mm |
+| Longerons | 699 x 70 x 44 mm |
+| Pieds avant | 44 x 70 x 250 mm |
+| Supports dossier | 500 x 70 x 44 mm |
 
 ## Fichiers
 
