@@ -31,7 +31,8 @@ TOTAL_H = PIVOT_Z + BACK_DZ
 RAIL_TOP_Z = SLAT_T + SLAT_T  # sommet du rail (44mm)
 SUPPORT_BELOW = 50.0
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
-STRUT_ATTACH = 400.0; STRUT_L = 380.0; STRUT_SECTION = SLAT_T
+STRUT_ATTACH = 550.0; STRUT_L = 530.0; STRUT_SECTION = SLAT_T
+BOLT_DIAM = 10; STRUT_BOLT_DIAM = 8; PIN_DIAM = 8
 RAIL_W = SLAT_T; RAIL_SECTION = SLAT_T
 BACKREST_ANGLES = [25.0, 35.0, 50.0]
 _NP = []
@@ -42,7 +43,7 @@ for _a in BACKREST_ANGLES:
     _yd = math.sqrt(STRUT_L**2 - (_zt - RAIL_TOP_Z)**2)
     _NP.append(_yt - _yd)
 RAIL_Y_START = PIVOT_Y
-RAIL_LENGTH = max(_NP) - RAIL_Y_START + 2 * STRUT_SECTION
+RAIL_LENGTH = 300  # du pivot vers l'arriere
 
 PIECES = [
     ("A", "Latte assise", 4, "600 x 95 x 22", "Lattes pleine largeur", WOOD2),
@@ -60,13 +61,19 @@ TOOLS = [
     ("Pied-de-biche / levier", "Demontage des lattes et blocs"),
     ("Arrache-clou / tenaille", "Retrait des clous"),
     ("Scie circulaire + guide", "Decoupe a longueur"),
-    ("Scie a onglet", "Decoupe encoches cremaillere"),
+    ("Perceuse + meche 8 et 10 mm", "Trous pivot, articulation, rail"),
     ("Ponceuse orbitale", "Poncage (80, 120, 180)"),
-    ("Visseuse + vis 4x50 mm", "Assemblage"),
+    ("Visseuse + vis 4x50 mm", "Assemblage bois"),
     ("Serre-joints (x4)", "Collage supports dossier"),
     ("Colle a bois D3", "Collage pieces doublees"),
-    ("Fausse equerre", "Angle dossier (25/35/50 deg)"),
-    ("Boulon M10 x 120 + rondelles", "Pivot dossier (x2)"),
+]
+
+HARDWARE = [
+    (f"Boulon M{BOLT_DIAM} x 120 + ecrou + 4 rondelles", 2, "Pivot dossier"),
+    (f"Boulon M{STRUT_BOLT_DIAM} x 60 + ecrou papillon + 2 rondelles", 2, "Articulation barre stab."),
+    (f"Goupille fendue acier {PIN_DIAM} mm x 50 mm", 2, "Verrouillage position"),
+    ("Vis a bois 4x50 mm", 50, "Assemblage general"),
+    ("Vis a bois 4x30 mm", 10, "Fixation rails"),
 ]
 
 ASSEMBLY = [
@@ -144,6 +151,23 @@ def page_tools(pdf):
         ax.text(55, y + 3, usage, va="center", fontsize=9, color="#555")
     pdf.savefig(fig); plt.close(fig)
 
+def page_hardware(pdf):
+    fig, ax = new_page(pdf, "Quincaillerie (mecanisme)")
+    ax.add_patch(Rectangle((5, 117), 90, 7, fc="#555", ec="black", lw=0.8))
+    ax.text(8, 120.5, "Element", fontsize=10, fontweight="bold", color="white")
+    ax.text(62, 120.5, "Qte", fontsize=10, fontweight="bold", color="white")
+    ax.text(72, 120.5, "Usage", fontsize=10, fontweight="bold", color="white")
+    for i, (item, qty, usage) in enumerate(HARDWARE):
+        y = 110 - i * 7
+        bg = "#f5f0ea" if i % 2 == 0 else "#ebe5db"
+        ax.add_patch(Rectangle((5, y), 90, 6, fc=bg, ec="#ccc", lw=0.5))
+        ax.text(8, y + 3, item, va="center", fontsize=8, fontweight="bold")
+        ax.text(64, y + 3, str(qty), ha="center", va="center", fontsize=9, fontweight="bold")
+        ax.text(72, y + 3, usage, va="center", fontsize=8, color="#555")
+    ax.text(50, 65, "Tous les boulons sont en acier zingue (exterieur).", ha="center", fontsize=9, color="#555")
+    ax.text(50, 59, "Les ecrous papillon permettent un reglage a la main.", ha="center", fontsize=9, color=WOOD4, fontweight="bold")
+    pdf.savefig(fig); plt.close(fig)
+
 def page_assembly(pdf):
     fig, ax = new_page(pdf, "Ordre d'assemblage")
     for i, (title, desc) in enumerate(ASSEMBLY):
@@ -160,6 +184,7 @@ def generate_nomenclature():
         page_cover(pdf)
         page_bom(pdf)
         page_tools(pdf)
+        page_hardware(pdf)
         page_assembly(pdf)
     print(f"Nomenclature PDF generee : {PDF_PATH} ({os.path.getsize(PDF_PATH) // 1024} Ko)")
 

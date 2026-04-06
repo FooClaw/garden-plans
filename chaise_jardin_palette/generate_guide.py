@@ -38,7 +38,8 @@ DIST_TO_SEAT = (SEAT_H - PIVOT_Z) / math.cos(math.radians(BACKREST_TILT))
 RAIL_Z = SLAT_T; RAIL_TOP_Z = RAIL_Z + SLAT_T
 SUPPORT_BELOW = 50.0
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
-STRUT_ATTACH = 400.0; STRUT_L = 380.0; STRUT_SECTION = SLAT_T
+STRUT_ATTACH = 550.0; STRUT_L = 530.0; STRUT_SECTION = SLAT_T
+BOLT_DIAM = 10; STRUT_BOLT_DIAM = 8; PIN_DIAM = 8
 RAIL_W = SLAT_T; RAIL_SECTION = SLAT_T
 _NP = []
 for _a in BACKREST_ANGLES:
@@ -48,7 +49,7 @@ for _a in BACKREST_ANGLES:
     _yd = math.sqrt(STRUT_L**2 - (_zt - RAIL_TOP_Z)**2)
     _NP.append(_yt - _yd)
 RAIL_Y_START = PIVOT_Y
-RAIL_LENGTH = max(_NP) - RAIL_Y_START + 2 * STRUT_SECTION
+RAIL_LENGTH = RUNNER_EXTEND - 50  # ~300 mm vers l'arriere
 
 BACK_SLATS_TOTAL = N_BACK * SLAT_W + (N_BACK - 1) * SLAT_GAP
 BACK_VISIBLE = BACK_LENGTH - DIST_TO_SEAT
@@ -182,7 +183,7 @@ def page_cutting(pdf):
         ("E", "Bloc lateral x6", f"44 x 44 x {BLOCK_H}", WOOD4, 8),
         ("F", "Support dossier x2", f"{SUPPORT_PIVOT_L:.0f} x 70 x 44", WOOD1, 70),
         ("G", "Traverse avant x1", f"{INNER_W} x 44 x 22", WOOD3, 41),
-        ("H", "Rail crante x2", f"{RAIL_LENGTH:.0f} x {RAIL_W} x {RAIL_SECTION}", "#e8c88a", 17),
+        ("H", "Rail crante x2", f"{RAIL_LENGTH:.0f} x {RAIL_W} x {RAIL_SECTION}", "#e8c88a", 30),
         ("I", "Barre stab. x2", f"{STRUT_L:.0f} x {STRUT_SECTION:.0f} x {STRUT_SECTION:.0f}", BAR_COLOR, 38),
     ]
     for i, (ref, name, dims, color, w) in enumerate(pieces):
@@ -308,11 +309,11 @@ def page_back_supports(pdf):
         "  1. Coller 2 lattes face a face (section 44 x 70 mm)",
         "     Serrer avec 4 serre-joints, laisser secher 24h",
         "",
-        "Montage du pivot :",
+        "Montage du pivot (boulon M10 x 120) :",
         "  2. Percer un trou de 10 mm dans le support a 50 mm du bas",
-        "  3. Percer le panneau lateral au sommet, bord arriere",
-        "  4. Assembler avec boulon M10 x 120 + rondelles",
-        "     Le support doit pivoter librement",
+        "  3. Percer les 2 planches du panneau (bord arriere, z=61 mm)",
+        f"  4. Inserer boulon M10 x {120} mm + 2 rondelles larges + ecrou",
+        "     Le support doit pivoter librement (ne pas serrer a fond)",
         "",
         "Rail crante (H) :",
         "  5. Fixer le rail (H) entre les planches du panneau",
@@ -412,20 +413,21 @@ def page_mechanism(pdf):
                 fontsize=8, color=colors_pos[idx], fontweight="bold")
     steps = [
         f"1. Couper 2 barres (I) a {STRUT_L:.0f} mm (section {STRUT_SECTION:.0f} x {STRUT_SECTION:.0f})",
+        "   Percer un trou de 8 mm a chaque extremite",
         "",
-        f"2. Fixer le haut de chaque barre au support (F) a {STRUT_ATTACH:.0f} mm du pivot",
-        "   Pivot avec boulon M8 pour que la barre puisse pivoter",
+        f"2. Fixer le HAUT au support (F) a {STRUT_ATTACH:.0f} mm du pivot",
+        f"   Boulon M{STRUT_BOLT_DIAM} x 60 + rondelle + ecrou papillon",
+        "   (la barre doit pouvoir pivoter librement)",
         "",
-        "3. Le pied de la barre se fixe sur le rail (H) avec une goupille",
-        "   La goupille passe a travers le trou du rail et la barre",
+        f"3. Le PIED repose sur le rail (H), bloque par une",
+        f"   goupille fendue en acier de {PIN_DIAM} mm de diametre",
+        "   (la goupille traverse le trou du rail + la barre)",
         "",
         "4. Pour changer de position :",
-        "   - Retirer la goupille",
-        "   - Faire coulisser le pied de la barre sur le rail",
-        "   - Aligner avec le trou souhaite",
-        "   - Remettre la goupille",
-        "",
-        "Le rail (H) a 3 trous de 10 mm espaces de ~30 mm",
+        "   - Retirer la goupille fendue",
+        "   - Coulisser le pied sur le rail",
+        "   - Aligner avec le trou souhaite (3 positions)",
+        "   - Inserer la goupille et ouvrir les branches",
     ]
     for i, line in enumerate(steps):
         ax.text(10, 47 - i * 3.3, line, fontsize=9,

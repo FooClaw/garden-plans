@@ -73,21 +73,27 @@ TOTAL_H = PIVOT_Z + BACK_DZ            # hauteur totale (position par defaut)
 # Distance le long du support entre le pivot et le niveau de l'assise
 DIST_TO_SEAT = (SEAT_H - PIVOT_Z) / math.cos(math.radians(BACKREST_TILT))
 
-# Support dossier (F) - pivotant
+# Support dossier (F) - pivotant sur boulon M10
 SUPPORT_BELOW = 50.0                                   # extension sous le pivot
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW           # longueur totale support
 
-# Barre stabilisatrice (I) - du haut du dossier a la cremaillere
-STRUT_ATTACH = 400.0         # point d'attache sur le support (depuis le pivot)
-STRUT_L = 380.0              # longueur de la barre stabilisatrice
-STRUT_SECTION = SLAT_T       # section 22 mm
+# Barre stabilisatrice (I) - du HAUT du dossier au rail
+STRUT_ATTACH = 550.0         # attache pres du sommet du dossier (depuis le pivot)
+STRUT_L = 530.0              # longueur de la barre (mm)
+STRUT_SECTION = SLAT_T       # section 22 mm (une planche)
 
-# Barre crantee (H) - rail horizontal entre les panneaux
-# Posee sur la planche basse, dans la zone des blocs, du pivot vers l'arriere
+# Barre crantee / rail (H) - du pivot vers l'arriere de la chaise
+# Posee sur la planche basse, entre les planches laterales
 RAIL_W = SLAT_T               # 22 mm largeur en X
 RAIL_SECTION = SLAT_T         # 22 mm hauteur
 RAIL_Z = SLAT_T               # posee sur la planche basse (z=22)
-RAIL_TOP_Z = RAIL_Z + RAIL_SECTION    # sommet du rail (z=44) - pied de la barre
+RAIL_TOP_Z = RAIL_Z + RAIL_SECTION    # sommet du rail (z=44)
+
+# Quincaillerie
+BOLT_DIAM = 10.0              # boulon pivot M10
+BOLT_LEN = 120.0              # longueur boulon pivot (traverse le panneau)
+PIN_DIAM = 8.0                # goupille de verrouillage (tige acier 8 mm)
+STRUT_BOLT_DIAM = 8.0        # boulon M8 articulation barre stab.
 
 # Positions des trous sur le rail pour chaque angle
 _NOTCH_POSITIONS = []
@@ -99,7 +105,7 @@ for _a in BACKREST_ANGLES:
     _yd = math.sqrt(STRUT_L**2 - _zd**2)
     _NOTCH_POSITIONS.append(_yt - _yd)
 RAIL_Y_START = PIVOT_Y                 # depart au niveau du pivot
-RAIL_LENGTH = max(_NOTCH_POSITIONS) - RAIL_Y_START + 2 * STRUT_SECTION
+RAIL_LENGTH = RUNNER_EXTEND - 50       # va loin vers l'arriere (~300 mm)
 
 # Geometrie de la barre stab. a l'angle par defaut (pour STL)
 _dr = math.radians(BACKREST_TILT)
@@ -215,7 +221,7 @@ def generate_stl():
         all_faces.extend(_box_faces(0, sy, PANEL_H,
                                     CHAIR_WIDTH, SLAT_W, SLAT_T))
 
-    # === SUPPORTS DOSSIER (x2) - pivotants, a l'interieur des panneaux ===
+    # === SUPPORTS DOSSIER (x2) - pivotants sur boulon M10 ===
     _tilt_rad = math.radians(BACKREST_TILT)
     sup_base_y = PIVOT_Y - SUPPORT_BELOW * math.sin(_tilt_rad)
     sup_base_z = PIVOT_Z - SUPPORT_BELOW * math.cos(_tilt_rad)
@@ -224,16 +230,35 @@ def generate_stl():
             bx, sup_base_y, sup_base_z,
             FRAME_W, FRAME_D, SUPPORT_PIVOT_L, BACKREST_TILT))
 
-    # === BARRES CRANTEES (x2) - rails horizontaux entre les panneaux ===
+    # === BOULONS PIVOT (x2) - M10, traverse le panneau + support ===
+    for bx in [0, CHAIR_WIDTH - PANEL_W]:
+        all_faces.extend(_box_faces(
+            bx, PIVOT_Y - BOLT_DIAM / 2, PIVOT_Z - BOLT_DIAM / 2,
+            PANEL_W, BOLT_DIAM, BOLT_DIAM))
+
+    # === RAILS CRANTES (x2) - du pivot vers l'arriere, visses sur planche basse ===
     for cx in [PANEL_W, CHAIR_WIDTH - PANEL_W - RAIL_W]:
         all_faces.extend(_box_faces(cx, RAIL_Y_START, RAIL_Z,
                                     RAIL_W, RAIL_LENGTH, RAIL_SECTION))
 
-    # === BARRES STABILISATRICES (x2) - du dossier au rail ===
+    # === BARRES STABILISATRICES (x2) - du haut du dossier au rail ===
     for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - STRUT_SECTION]:
         all_faces.extend(_tilted_box_faces(
             bx, STRUT_Y_BOT, RAIL_TOP_Z,
             STRUT_SECTION, STRUT_SECTION, STRUT_L, STRUT_TILT))
+
+    # === BOULONS ARTICULATION BARRE STAB. (x2) - M8, sur le support ===
+    att_y = PIVOT_Y + STRUT_ATTACH * math.sin(_tilt_rad)
+    att_z = PIVOT_Z + STRUT_ATTACH * math.cos(_tilt_rad)
+    for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - FRAME_W]:
+        all_faces.extend(_box_faces(
+            bx, att_y - STRUT_BOLT_DIAM / 2, att_z - STRUT_BOLT_DIAM / 2,
+            FRAME_W, STRUT_BOLT_DIAM, STRUT_BOLT_DIAM))
+
+    # === GOUPILLE DE VERROUILLAGE - tige acier dans le trou du rail ===
+    all_faces.extend(_box_faces(
+        PANEL_W - 10, STRUT_Y_BOT - PIN_DIAM / 2, RAIL_TOP_Z - PIN_DIAM / 2,
+        INNER_WIDTH + 20, PIN_DIAM, PIN_DIAM))
 
     # === LATTES DE DOSSIER (x5) - inclinées à 35°, au-dessus de l'assise ===
     back_start_x = PANEL_W
@@ -381,9 +406,33 @@ def generate_pdf():
     ]
     ax1.add_patch(Polygon(back_pts, closed=True, fc=W1, ec="black", lw=1.2))
 
-    # Pivot (cercle)
-    ax1.add_patch(Circle((pys, pzs), 4 * s, fc="white", ec="red",
-                          lw=1.5, zorder=5))
+    # Pivot (boulon M10 - cercle plein)
+    ax1.add_patch(Circle((pys, pzs), BOLT_DIAM / 2 * s, fc="#888",
+                          ec="black", lw=1.2, zorder=5))
+    ax1.annotate(f"Boulon M{BOLT_DIAM:.0f}", xy=(pys, pzs),
+                 xytext=(pys - 20 * s, pzs - 15 * s),
+                 fontsize=5, color="red", fontweight="bold",
+                 arrowprops=dict(arrowstyle="->", color="red", lw=0.6))
+
+    # Articulation barre stab. (boulon M8)
+    _att_y = PIVOT_Y + STRUT_ATTACH * _sn
+    _att_z = PIVOT_Z + STRUT_ATTACH * _cs
+    ax1.add_patch(Circle((_att_y * s, _att_z * s),
+                          STRUT_BOLT_DIAM / 2 * s,
+                          fc="#888", ec="black", lw=0.8, zorder=5))
+    ax1.annotate(f"Boulon M{STRUT_BOLT_DIAM:.0f}", xy=(_att_y * s, _att_z * s),
+                 xytext=(_att_y * s + 12 * s, _att_z * s + 5 * s),
+                 fontsize=5, color="red",
+                 arrowprops=dict(arrowstyle="->", color="red", lw=0.6))
+
+    # Goupille sur le rail (position par defaut)
+    ax1.add_patch(Circle((STRUT_Y_BOT * s, RAIL_TOP_Z * s),
+                          PIN_DIAM / 2 * s, fc="#c06030",
+                          ec="black", lw=0.8, zorder=5))
+    ax1.annotate(f"Goupille {PIN_DIAM:.0f}mm", xy=(STRUT_Y_BOT * s, RAIL_TOP_Z * s),
+                 xytext=(STRUT_Y_BOT * s - 15 * s, RAIL_TOP_Z * s + 12 * s),
+                 fontsize=5, color="#c06030",
+                 arrowprops=dict(arrowstyle="->", color="#c06030", lw=0.6))
 
     # Lattes dossier (inclinées)
     for i in range(N_BACK_SLATS):
@@ -524,8 +573,8 @@ def generate_pdf():
         f"Assise : {N_SEAT_SLATS} lattes  |  "
         f"Dossier : {N_BACK_SLATS} lattes, inclinable 3 positions "
         f"({angles_str} deg)\n"
-        f"Mecanisme : pivot + 2 barres stab. + "
-        f"2 rails crantes (goupille)\n"
+        f"Mecanisme : 2 boulons M{BOLT_DIAM:.0f} (pivot) + 2 boulons "
+        f"M{STRUT_BOLT_DIAM:.0f} (articulation) + goupille {PIN_DIAM:.0f}mm\n"
         f"Panneaux lateraux style palette (planche + blocs "
         f"{BLOCK_H:.0f} mm + planche)\n"
         f"Sans accoudoirs  |  Longerons depassent de "
