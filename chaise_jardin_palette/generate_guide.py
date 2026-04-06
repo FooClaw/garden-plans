@@ -1,19 +1,20 @@
 """Guide de construction illustre - Deck Chair de jardin en palettes.
 
-Structure palette : panneaux lateraux (planche + blocs + planche),
-assise tres basse, dossier tres incline, sans accoudoirs.
+Structure palette : panneaux lateraux, assise tres basse,
+dossier inclinable (3 positions, mecanisme cremaillere).
 """
 import math
 import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Polygon
+from matplotlib.patches import Rectangle, Polygon, Circle
 from matplotlib.backends.backend_pdf import PdfPages
 
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 PDF_PATH = os.path.join(OUTPUT_DIR, "guide_construction.pdf")
 WOOD1, WOOD2, WOOD3, WOOD4 = "#d2a679", "#c49a6c", "#b8956a", "#a0784e"
+BAR_COLOR = "#c06030"
 
 CHAIR_W = 600
 SLAT_W = 95; SLAT_T = 22; SLAT_GAP = 15
@@ -28,7 +29,21 @@ FRAME_W = 44; FRAME_D = 70
 INNER_W = CHAIR_W - 2 * PANEL_W  # 410
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
 BACK_DY = BACK_LENGTH * math.sin(math.radians(BACKREST_TILT))
-TOTAL_H = SEAT_H + BACK_DZ
+
+# Mecanisme
+BACKREST_ANGLES = [25.0, 35.0, 50.0]
+PIVOT_Y = SEAT_DEPTH; PIVOT_Z = PANEL_H
+TOTAL_H = PIVOT_Z + BACK_DZ
+SUPPORT_BELOW = 50.0
+SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
+BAR_DIST = 60.0; BAR_SECTION = 30.0
+CREM_W = SLAT_T; CREM_Z_HEIGHT = BLOCK_H
+_BAR_POS = [(PIVOT_Y + BAR_DIST * math.sin(math.radians(a)),
+             PIVOT_Z + BAR_DIST * math.cos(math.radians(a)))
+            for a in BACKREST_ANGLES]
+CREM_Y_START = min(p[0] for p in _BAR_POS) - BAR_SECTION
+CREM_L = max(p[0] for p in _BAR_POS) - CREM_Y_START + 2 * BAR_SECTION
+
 BACK_SLATS_TOTAL = N_BACK * SLAT_W + (N_BACK - 1) * SLAT_GAP
 BACK_SLAT_MARGIN = (BACK_LENGTH - BACK_SLATS_TOTAL) / 2
 
@@ -40,11 +55,10 @@ def new_page(pdf, title, subtitle=None):
         ax.text(50, 128, subtitle, ha="center", va="top", fontsize=11, color="#555")
     return fig, ax
 
-SUPPORT_BASE_Y = SEAT_DEPTH - SEAT_H * math.tan(math.radians(BACKREST_TILT))
-SUPPORT_FULL_L = TOTAL_H / math.cos(math.radians(BACKREST_TILT))
-
 def draw_side(ax, x0, y0, s=0.04):
-    """Vue de cote avec panneaux palette et support dossier continu."""
+    """Vue de cote avec mecanisme cremaillere."""
+    _rad = math.radians(BACKREST_TILT)
+    _sn, _cs = math.sin(_rad), math.cos(_rad)
     # Planche basse
     ax.add_patch(Rectangle((x0, y0), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
     # Blocs
@@ -52,27 +66,40 @@ def draw_side(ax, x0, y0, s=0.04):
         ax.add_patch(Rectangle((x0+by*s, y0+SLAT_T*s), BLOCK_W*s, BLOCK_H*s, fc=WOOD4, ec="black", lw=0.6))
     # Planche haute
     ax.add_patch(Rectangle((x0, y0+(SLAT_T+BLOCK_H)*s), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
-    # Support dossier continu (du sol au sommet)
-    base_y = SUPPORT_BASE_Y * s
-    sup_dy = SUPPORT_FULL_L * math.sin(math.radians(BACKREST_TILT)) * s
-    sup_dz = TOTAL_H * s
-    pts = [
-        [x0+base_y, y0],
-        [x0+base_y+FRAME_D*s, y0],
-        [x0+base_y+FRAME_D*s+sup_dy, y0+sup_dz],
-        [x0+base_y+sup_dy, y0+sup_dz],
-    ]
-    ax.add_patch(Polygon(pts, closed=True, fc=WOOD1, ec="black", lw=1))
+    # Cremaillere
+    ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+PANEL_H*s),
+                             CREM_L*s, CREM_Z_HEIGHT*s,
+                             fc="#e8c88a", ec="black", lw=0.8))
     # Assise
     ax.add_patch(Rectangle((x0, y0+PANEL_H*s), SEAT_DEPTH*s, SLAT_T*s, fc=WOOD2, ec="black", lw=0.8))
-    # Lattes dossier (inclinées à 35 deg)
-    _rad = math.radians(BACKREST_TILT)
-    _sn, _cs = math.sin(_rad), math.cos(_rad)
+    # Support dossier pivotant
+    sb_y = PIVOT_Y - SUPPORT_BELOW * _sn
+    sb_z = PIVOT_Z - SUPPORT_BELOW * _cs
+    st_y = PIVOT_Y + BACK_LENGTH * _sn
+    st_z = PIVOT_Z + BACK_LENGTH * _cs
+    pts = [
+        [x0+sb_y*s, y0+sb_z*s],
+        [x0+(sb_y+FRAME_D*_sn)*s, y0+(sb_z+FRAME_D*_cs)*s],
+        [x0+(st_y+FRAME_D*_sn)*s, y0+(st_z+FRAME_D*_cs)*s],
+        [x0+st_y*s, y0+st_z*s],
+    ]
+    ax.add_patch(Polygon(pts, closed=True, fc=WOOD1, ec="black", lw=1))
+    # Pivot
+    ax.add_patch(Circle((x0+PIVOT_Y*s, y0+PIVOT_Z*s), 3*s,
+                         fc="white", ec="red", lw=1.2, zorder=5))
+    # Barre transversale
+    by_bar = PIVOT_Y + BAR_DIST * _sn
+    bz_bar = PIVOT_Z + BAR_DIST * _cs
+    ax.add_patch(Rectangle((x0+(by_bar-BAR_SECTION/2)*s,
+                             y0+(bz_bar-BAR_SECTION/2)*s),
+                            BAR_SECTION*s, BAR_SECTION*s,
+                            fc=BAR_COLOR, ec="black", lw=0.8, zorder=4))
+    # Lattes dossier
     for i in range(N_BACK):
         along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
         frac = along / BACK_LENGTH
-        by0 = SEAT_DEPTH + frac * BACK_DY
-        bz0 = SEAT_H + frac * BACK_DZ
+        by0 = PIVOT_Y + frac * BACK_DY
+        bz0 = PIVOT_Z + frac * BACK_DZ
         pts = [
             [x0 + by0 * s,                                y0 + bz0 * s],
             [x0 + (by0 + SLAT_W * _sn) * s,               y0 + (bz0 + SLAT_W * _cs) * s],
@@ -93,10 +120,11 @@ def draw_front(ax, x0, y0, s=0.04):
 
 def page_cover(pdf):
     fig, ax = new_page(pdf, "Guide de Construction", "Deck Chair de Jardin en Palettes Recyclees")
-    ax.text(50, 123, "Design minimaliste - panneaux lateraux palette, sans accoudoirs", ha="center", fontsize=11, style="italic", color=WOOD4)
+    ax.text(50, 123, "Dossier inclinable 3 positions - mecanisme cremaillere", ha="center", fontsize=11, style="italic", color=WOOD4)
     draw_side(ax, 12, 60, 0.055)
-    ax.text(50, 55, f"{CHAIR_W} x {RUNNER_L} x {TOTAL_H:.0f} mm  |  Assise {SEAT_H} mm  |  Dossier ~{90+BACKREST_TILT} deg", ha="center", fontsize=10, color="#333")
-    ax.text(50, 50, "Adaptee a la table basse palette (450 mm)", ha="center", fontsize=10, color="#666")
+    angles = "/".join(f"{a:.0f}" for a in BACKREST_ANGLES)
+    ax.text(50, 55, f"{CHAIR_W} x {RUNNER_L} x {TOTAL_H:.0f} mm  |  Assise {SEAT_H} mm  |  3 positions ({angles} deg)", ha="center", fontsize=10, color="#333")
+    ax.text(50, 50, "Mecanisme cremaillere  |  Adaptee a la table basse palette", ha="center", fontsize=10, color="#666")
     ax.text(50, 15, "Inspire de : instructables.com/A-Deck-Chair-Made-From-Pallet-Wood-Leftovers", ha="center", fontsize=8, color="#999")
     pdf.savefig(fig); plt.close(fig)
 
@@ -143,8 +171,10 @@ def page_cutting(pdf):
         ("C", f"Planche lat. basse x2", f"{RUNNER_L} x 95 x 22", WOOD1, 77),
         ("D", f"Planche lat. haute x2", f"{RUNNER_L} x 95 x 22", WOOD1, 77),
         ("E", "Bloc lateral x6", f"44 x 44 x {BLOCK_H}", WOOD4, 8),
-        ("F", "Support dossier x2", f"{SUPPORT_FULL_L:.0f} x 70 x 44", WOOD1, 82),
+        ("F", "Support dossier x2", f"{SUPPORT_PIVOT_L:.0f} x 70 x 44", WOOD1, 70),
         ("G", "Traverse avant x1", f"{INNER_W} x 44 x 22", WOOD3, 41),
+        ("H", "Cremaillere x2", f"{CREM_L:.0f} x {CREM_W} x {CREM_Z_HEIGHT:.0f}", "#e8c88a", 10),
+        ("I", "Barre transv. x1", f"{CHAIR_W + 2*CREM_W:.0f} x 30 x 30", BAR_COLOR, 64),
     ]
     for i, (ref, name, dims, color, w) in enumerate(pieces):
         y = 118 - i * 11
@@ -235,7 +265,7 @@ def page_angle_prep(pdf):
         f"   (= {90 + BACKREST_TILT} deg par rapport a l'horizontale de l'assise)",
         "",
         "2. Reporter l'angle sur les 2 supports dossier (F)",
-        f"   Longueur totale du support : {SUPPORT_FULL_L:.0f} mm",
+        f"   Longueur totale du support : {SUPPORT_PIVOT_L:.0f} mm",
         "",
         "3. Couper le pied du support en biseau a 35 deg",
         "   pour qu'il repose a plat au sol",
@@ -257,29 +287,31 @@ def page_angle_prep(pdf):
 
 def page_back_supports(pdf):
     fig, ax = new_page(pdf, "Etape 5 : Supports dossier")
-    ax.text(50, 125, "Fixer les 2 supports dossier (F) a l'interieur des panneaux",
+    ax.text(50, 125, "Monter les supports pivotants (F) + cremailleres (H)",
             ha="center", fontsize=10, color="#666")
     draw_side(ax, 10, 65, 0.055)
-    ax.annotate(f"Support dossier (F)\n{SUPPORT_FULL_L:.0f} x 70 x 44 mm\nAngle ~{BACKREST_TILT} deg",
+    ax.annotate(f"Support pivotant (F)\n{SUPPORT_PIVOT_L:.0f} x 70 x 44 mm",
                 xy=(55, 95), fontsize=9, color=WOOD4, fontweight="bold")
 
     # Instructions detaillees
     steps = [
-        "Assemblage du support :",
+        "Assemblage du support (F) :",
         "  1. Coller 2 lattes face a face (section 44 x 70 mm)",
         "     Serrer avec 4 serre-joints, laisser secher 24h",
         "",
-        "Fixation a l'interieur du panneau lateral :",
-        f"  2. Positionner le support contre la face interne du panneau a Y = {SUPPORT_BASE_Y:.0f} mm",
-        "     Le pied du support repose au sol, le haut depasse",
-        f"  3. Verifier l'angle a {BACKREST_TILT} deg avec la fausse equerre",
-        "  4. Percer 2 trous de 8 mm a travers panneau + support",
-        "     - Trou bas : ~60 mm au-dessus du sol",
-        f"     - Trou haut : ~{PANEL_H - 20} mm (sous la planche haute)",
-        "  5. Boulonner avec M8 x 100 mm + rondelles + ecrous",
+        "Montage du pivot :",
+        "  2. Percer un trou de 10 mm dans le support a 50 mm du bas",
+        "  3. Percer le panneau lateral au sommet, bord arriere",
+        "  4. Assembler avec boulon M10 x 120 + rondelles",
+        "     Le support doit pivoter librement",
+        "",
+        "Cremaillere (H) :",
+        "  5. Fixer le bloc crante (H) sur l'EXTERIEUR du panneau",
+        "     Visser a travers le panneau dans le bloc",
+        f"  6. Tailler 3 encoches en V ({BAR_SECTION:.0f} mm) dans le haut",
+        "     pour les 3 positions (25/35/50 deg)",
         "",
         "Repeter pour le 2e cote (symetrique).",
-        "Verifier que les 2 supports sont paralleles.",
     ]
     for i, line in enumerate(steps):
         y = 58 - i * 3.2
@@ -328,6 +360,62 @@ def page_backrest(pdf):
         ax.text(10, y0 - 16 - i * 5, tip, fontsize=8, color="#333")
     pdf.savefig(fig); plt.close(fig)
 
+def page_mechanism(pdf):
+    """Page expliquant le mecanisme cremaillere."""
+    fig, ax = new_page(pdf, "Etape 6b : Barre transversale (I)",
+                       "Installer la barre d'appui dans les cremailleres")
+    # Schema : vue de cote simplifiee avec les 3 positions
+    x0, y0, s = 10, 55, 0.05
+    # Panneau simplifie
+    ax.add_patch(Rectangle((x0, y0), RUNNER_L*s, PANEL_H*s,
+                            fc=WOOD1, ec="black", lw=0.8, alpha=0.3))
+    # Cremaillere
+    ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+PANEL_H*s),
+                             CREM_L*s, CREM_Z_HEIGHT*s,
+                             fc="#e8c88a", ec="black", lw=1.2))
+    ax.text(x0+(CREM_Y_START+CREM_L/2)*s, y0+(PANEL_H+CREM_Z_HEIGHT/2)*s,
+            "H", ha="center", va="center", fontsize=9, fontweight="bold")
+    # Pivot
+    px, py = x0+PIVOT_Y*s, y0+PIVOT_Z*s
+    ax.add_patch(Circle((px, py), 2.5*s, fc="white", ec="red", lw=1.5, zorder=5))
+    # 3 positions
+    colors_pos = ["#2196F3", "#4CAF50", "#FF9800"]
+    labels = ["25 deg (assis)", "35 deg (detendu)", "50 deg (allonge)"]
+    for idx, angle in enumerate(BACKREST_ANGLES):
+        ar = math.radians(angle)
+        asn, acs = math.sin(ar), math.cos(ar)
+        # Support ghost
+        st_y = PIVOT_Y + BACK_LENGTH * 0.4 * asn
+        st_z = PIVOT_Z + BACK_LENGTH * 0.4 * acs
+        ax.plot([px, x0+st_y*s], [py, y0+st_z*s],
+                color=colors_pos[idx], lw=2.5, alpha=0.7)
+        # Bar position
+        by = PIVOT_Y + BAR_DIST * asn
+        bz = PIVOT_Z + BAR_DIST * acs
+        ax.add_patch(Circle((x0+by*s, y0+bz*s), 2*s,
+                             fc=colors_pos[idx], ec="black", lw=0.5, zorder=4))
+        ax.text(x0+st_y*s+2, y0+st_z*s, labels[idx],
+                fontsize=8, color=colors_pos[idx], fontweight="bold")
+    steps = [
+        f"1. Couper la barre (I) a {CHAIR_W + 2*CREM_W:.0f} mm (section 30 x 30)",
+        f"   Elle depasse de {CREM_W} mm de chaque cote",
+        "",
+        f"2. Percer un trou de 10 mm a {BAR_DIST:.0f} mm du pivot dans chaque support",
+        "   Inserer la barre et bloquer avec goupilles ou vis",
+        "",
+        "3. Pour changer de position :",
+        "   - Soulever le dossier pour degager la barre",
+        "   - Incliner au cran souhaite",
+        "   - Laisser la barre tomber dans l'encoche",
+        "",
+        "Les 3 encoches dans la cremaillere (H) sont en V",
+        f"  Largeur : {BAR_SECTION:.0f} mm | Profondeur : 25-40 mm",
+    ]
+    for i, line in enumerate(steps):
+        ax.text(10, 47 - i * 3.3, line, fontsize=9,
+                color="#333" if not line.startswith("   ") else "#555")
+    pdf.savefig(fig); plt.close(fig)
+
 def page_verification(pdf):
     """Page de verification avant finition."""
     fig, ax = new_page(pdf, "Etape 7 : Verification",
@@ -338,10 +426,10 @@ def page_verification(pdf):
             "Verifier qu'elle ne bascule pas (4 points d'appui au sol)",
             "S'asseoir doucement pour tester la solidite",
         ]),
-        ("Angle du dossier", [
-            f"Verifier l'angle de {90 + BACKREST_TILT} deg entre assise et dossier",
-            "Utiliser la fausse equerre pour controler",
-            "Le dossier doit etre confortable en position allongee",
+        ("Mecanisme d'inclinaison", [
+            "Tester les 3 positions (25/35/50 deg)",
+            "La barre doit tomber franchement dans chaque encoche",
+            "Le dossier ne doit pas glisser sous le poids",
         ]),
         ("Alignement des lattes", [
             "Les lattes d'assise doivent etre paralleles entre elles",
@@ -399,15 +487,16 @@ def page_final(pdf):
     ax.text(25, 77, "Vue de cote", ha="center", fontsize=8, color="#666")
     draw_front(ax, 55, 80, 0.035)
     ax.text(68, 77, "Vue de face", ha="center", fontsize=8, color="#666")
+    angles = "/".join(f"{a:.0f}" for a in BACKREST_ANGLES)
     summary = [
         "Materiau : 1 euro-palette recyclee (marquage HT)",
         f"Dimensions : {CHAIR_W} x {RUNNER_L} x {TOTAL_H:.0f} mm",
         f"Hauteur assise : {SEAT_H} mm seulement !",
-        f"Angle dossier : ~{90+BACKREST_TILT} deg (tres detendu)",
+        f"Dossier inclinable : 3 positions ({angles} deg)",
+        "Mecanisme cremaillere (barre + blocs crantes)",
         "Panneaux lateraux style palette (blocs 78 mm)",
-        "Sans accoudoirs (design minimaliste)",
         f"Longerons depassent de {RUNNER_EXTEND} mm a l'arriere",
-        "22 pieces au total",
+        "25 pieces au total",
     ]
     for i, line in enumerate(summary):
         ax.text(15, 68 - i*5, f"  {line}", fontsize=9)
@@ -425,6 +514,7 @@ def generate_guide():
         page_angle_prep(pdf)
         page_back_supports(pdf)
         page_backrest(pdf)
+        page_mechanism(pdf)
         page_verification(pdf)
         page_finishing(pdf)
         page_final(pdf)

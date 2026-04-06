@@ -1,12 +1,12 @@
 """
 Deck chair de jardin en palettes recyclees - Modele 3D
 
-Inspire fidellement du projet Instructables "A Deck Chair Made From
-Pallet Wood Leftovers" par Well Done Tips.
+Inspire du projet Instructables "A Deck Chair Made From Pallet Wood
+Leftovers" par Well Done Tips.
 
-Structure type palette : panneaux lateraux (planche basse + blocs +
-planche haute), assise tres basse, dossier tres incline, sans
-accoudoirs, longerons depassant loin a l'arriere.
+Structure type palette : panneaux lateraux, assise tres basse,
+dossier inclinable (3 positions, mecanisme cremaillere type chaise
+de plage), sans accoudoirs, longerons depassant a l'arriere.
 
 Usage :
     python3 generate_table.py
@@ -20,7 +20,7 @@ from stl import mesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Polygon
+from matplotlib.patches import Rectangle, Polygon, Arc, Circle
 from matplotlib.backends.backend_pdf import PdfPages
 
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -60,14 +60,36 @@ FRAME_D = 70.0
 
 # Dimensions calculees
 INNER_WIDTH = CHAIR_WIDTH - 2 * PANEL_W  # espace entre panneaux ~ 410
-BACK_DZ = BACK_LENGTH * math.sin(math.radians(90 - BACKREST_TILT))
+BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
 BACK_DY = BACK_LENGTH * math.sin(math.radians(BACKREST_TILT))
-TOTAL_H = SEAT_H + BACK_DZ
 
-# Support dossier continu (du sol au sommet du dossier)
-# Le support traverse le panneau lateral et y est boulonne
-SUPPORT_BASE_Y = SEAT_DEPTH - SEAT_H * math.tan(math.radians(BACKREST_TILT))
-SUPPORT_FULL_L = TOTAL_H / math.cos(math.radians(BACKREST_TILT))
+# --- Mecanisme d'inclinaison (type chaise de plage) ---
+BACKREST_ANGLES = [25.0, 35.0, 50.0]  # 3 crans (assis / detendu / allonge)
+PIVOT_Y = SEAT_DEPTH                   # pivot au bord arriere de l'assise
+PIVOT_Z = PANEL_H                      # pivot au sommet du panneau lateral
+
+TOTAL_H = PIVOT_Z + BACK_DZ            # hauteur totale (position par defaut)
+
+# Support dossier (F) - pivotant
+SUPPORT_BELOW = 50.0                                   # extension sous le pivot
+SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW           # longueur totale support
+
+# Barre transversale d'appui (I) - relie les supports, depasse dans les crans
+BAR_DIST = 60.0              # distance du pivot le long du support
+BAR_SECTION = 30.0           # section carree (mm)
+
+# Cremaillere (H) - blocs crantes sur l'exterieur de chaque panneau
+CREM_W = SLAT_T              # 22 mm (largeur en X)
+CREM_Z_HEIGHT = BLOCK_H      # 78 mm (hauteur, utilise des blocs palette)
+
+# Positions de la barre aux differents angles
+_BAR_POSITIONS = []
+for _a in BACKREST_ANGLES:
+    _r = math.radians(_a)
+    _BAR_POSITIONS.append((PIVOT_Y + BAR_DIST * math.sin(_r),
+                           PIVOT_Z + BAR_DIST * math.cos(_r)))
+CREM_Y_START = min(p[0] for p in _BAR_POSITIONS) - BAR_SECTION
+CREM_L = max(p[0] for p in _BAR_POSITIONS) - CREM_Y_START + 2 * BAR_SECTION
 
 # Espacement des lattes de dossier le long de l'axe incline
 BACK_SLATS_TOTAL = N_BACK_SLATS * SLAT_W + (N_BACK_SLATS - 1) * SLAT_GAP
@@ -172,11 +194,26 @@ def generate_stl():
         all_faces.extend(_box_faces(0, sy, PANEL_H,
                                     CHAIR_WIDTH, SLAT_W, SLAT_T))
 
-    # === SUPPORTS DOSSIER (x2) - a l'interieur des panneaux lateraux ===
+    # === SUPPORTS DOSSIER (x2) - pivotants, a l'interieur des panneaux ===
+    _tilt_rad = math.radians(BACKREST_TILT)
+    sup_base_y = PIVOT_Y - SUPPORT_BELOW * math.sin(_tilt_rad)
+    sup_base_z = PIVOT_Z - SUPPORT_BELOW * math.cos(_tilt_rad)
     for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - FRAME_W]:
         all_faces.extend(_tilted_box_faces(
-            bx, SUPPORT_BASE_Y, 0,
-            FRAME_W, FRAME_D, SUPPORT_FULL_L, BACKREST_TILT))
+            bx, sup_base_y, sup_base_z,
+            FRAME_W, FRAME_D, SUPPORT_PIVOT_L, BACKREST_TILT))
+
+    # === CREMAILLERES (x2) - blocs crantes sur l'exterieur des panneaux ===
+    for cx in [-CREM_W, CHAIR_WIDTH]:
+        all_faces.extend(_box_faces(cx, CREM_Y_START, PANEL_H,
+                                    CREM_W, CREM_L, CREM_Z_HEIGHT))
+
+    # === BARRE TRANSVERSALE (x1) - repose dans les crans ===
+    bar_y = PIVOT_Y + BAR_DIST * math.sin(_tilt_rad)
+    bar_z = PIVOT_Z + BAR_DIST * math.cos(_tilt_rad)
+    all_faces.extend(_box_faces(
+        -CREM_W, bar_y - BAR_SECTION / 2, bar_z - BAR_SECTION / 2,
+        CHAIR_WIDTH + 2 * CREM_W, BAR_SECTION, BAR_SECTION))
 
     # === LATTES DE DOSSIER (x5) - inclinées à 35°, entre les supports ===
     back_start_x = PANEL_W
@@ -184,8 +221,8 @@ def generate_stl():
     for i in range(N_BACK_SLATS):
         along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
         frac = along / BACK_LENGTH
-        bz = SEAT_H + frac * BACK_DZ
-        by = SEAT_DEPTH + frac * BACK_DY
+        bz = PIVOT_Z + frac * BACK_DZ
+        by = PIVOT_Y + frac * BACK_DY
         all_faces.extend(_backrest_slat_faces(
             back_start_x, by, bz,
             back_slat_w, SLAT_W, SLAT_T, BACKREST_TILT))
@@ -257,27 +294,73 @@ def generate_pdf():
         ax1.add_patch(Rectangle((sy*s, PANEL_H*s),
                                 SLAT_W*s, SLAT_T*s, fc=W2, ec="black", lw=0.6))
 
-    # Support dossier continu (du sol au sommet)
-    base_y0 = SUPPORT_BASE_Y * s
-    support_dy = SUPPORT_FULL_L * math.sin(math.radians(BACKREST_TILT)) * s
-    support_dz = TOTAL_H * s
+    # --- Mecanisme d'inclinaison ---
+    _rad = math.radians(BACKREST_TILT)
+    _sn, _cs = math.sin(_rad), math.cos(_rad)
+    pys, pzs = PIVOT_Y * s, PIVOT_Z * s
+
+    # Cremaillere (bloc derriere le pivot)
+    ax1.add_patch(Rectangle((CREM_Y_START * s, PANEL_H * s),
+                             CREM_L * s, CREM_Z_HEIGHT * s,
+                             fc="#e8c88a", ec="black", lw=1))
+    ax1.text((CREM_Y_START + CREM_L / 2) * s,
+             (PANEL_H + CREM_Z_HEIGHT / 2) * s, "H",
+             ha="center", va="center", fontsize=7, fontweight="bold")
+
+    # Positions alternatives du dossier (fantomes)
+    for angle in BACKREST_ANGLES:
+        if angle == BACKREST_TILT:
+            continue
+        ar = math.radians(angle)
+        asn, acs = math.sin(ar), math.cos(ar)
+        sb_y = PIVOT_Y - SUPPORT_BELOW * asn
+        sb_z = PIVOT_Z - SUPPORT_BELOW * acs
+        st_y = PIVOT_Y + BACK_LENGTH * asn
+        st_z = PIVOT_Z + BACK_LENGTH * acs
+        pts = [
+            [sb_y * s, sb_z * s],
+            [(sb_y + FRAME_D * asn) * s, (sb_z + FRAME_D * acs) * s],
+            [(st_y + FRAME_D * asn) * s, (st_z + FRAME_D * acs) * s],
+            [st_y * s, st_z * s],
+        ]
+        ax1.add_patch(Polygon(pts, closed=True, fc="none", ec="#999",
+                               lw=0.7, ls="--", alpha=0.6))
+        ax1.text(st_y * s + 3, st_z * s,
+                 f"{angle:.0f}deg", fontsize=6, color="#999")
+
+    # Support dossier (position par defaut)
+    sb_y = PIVOT_Y - SUPPORT_BELOW * _sn
+    sb_z = PIVOT_Z - SUPPORT_BELOW * _cs
+    st_y = PIVOT_Y + BACK_LENGTH * _sn
+    st_z = PIVOT_Z + BACK_LENGTH * _cs
     back_pts = [
-        [base_y0, 0],
-        [base_y0 + FRAME_D*s, 0],
-        [base_y0 + FRAME_D*s + support_dy, support_dz],
-        [base_y0 + support_dy, support_dz],
+        [sb_y * s, sb_z * s],
+        [(sb_y + FRAME_D * _sn) * s, (sb_z + FRAME_D * _cs) * s],
+        [(st_y + FRAME_D * _sn) * s, (st_z + FRAME_D * _cs) * s],
+        [st_y * s, st_z * s],
     ]
     ax1.add_patch(Polygon(back_pts, closed=True, fc=W1, ec="black", lw=1.2))
 
-    # Lattes dossier (inclinées a 35 deg)
-    _rad = math.radians(BACKREST_TILT)
-    _sn, _cs = math.sin(_rad), math.cos(_rad)
+    # Pivot (cercle)
+    ax1.add_patch(Circle((pys, pzs), 4 * s, fc="white", ec="red",
+                          lw=1.5, zorder=5))
+
+    # Barre transversale
+    by_bar = PIVOT_Y + BAR_DIST * _sn
+    bz_bar = PIVOT_Z + BAR_DIST * _cs
+    ax1.add_patch(Rectangle(((by_bar - BAR_SECTION / 2) * s,
+                              (bz_bar - BAR_SECTION / 2) * s),
+                             BAR_SECTION * s, BAR_SECTION * s,
+                             fc="#c06030", ec="black", lw=1, zorder=4))
+    ax1.text((by_bar + BAR_SECTION) * s, bz_bar * s,
+             "I", fontsize=7, fontweight="bold", color="#c06030")
+
+    # Lattes dossier (inclinées)
     for i in range(N_BACK_SLATS):
         along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
         frac = along / BACK_LENGTH
-        by0 = SEAT_DEPTH + frac * BACK_DY
-        bz0 = SEAT_H + frac * BACK_DZ
-        # 4 coins du profil de latte dans le plan Y-Z
+        by0 = PIVOT_Y + frac * BACK_DY
+        bz0 = PIVOT_Z + frac * BACK_DZ
         pts = [
             [by0 * s,                              bz0 * s],
             [(by0 + SLAT_W * _sn) * s,             (bz0 + SLAT_W * _cs) * s],
@@ -290,9 +373,8 @@ def generate_pdf():
     _add_dim_h(ax1, 0, RUNNER_L*s, TOTAL_H*s, f"{RUNNER_L:.0f} mm", offset=8)
     _add_dim_v(ax1, -5, 0, SEAT_H*s, f"{SEAT_H:.0f}", offset=-18)
     _add_dim_v(ax1, RUNNER_L*s, 0, TOTAL_H*s, f"{TOTAL_H:.0f}", offset=12)
-    seat_top = SEAT_H * s
-    ax1.text(SEAT_DEPTH*s + 20*s, seat_top + 30*s,
-             f"~{90 + BACKREST_TILT:.0f}deg", fontsize=8, color="red",
+    ax1.text(pys + 10 * s, pzs - 10 * s,
+             "3 positions\n25/35/50 deg", fontsize=6, color="red",
              fontweight="bold")
 
     ax1.set_xlim(-25, RUNNER_L*s + 45)
@@ -323,17 +405,32 @@ def generate_pdf():
     ax2.add_patch(Rectangle((0, PANEL_H*s2), CHAIR_WIDTH*s2, SLAT_T*s2,
                              fc=W2, ec="black", lw=1))
 
-    # Supports dossier continus (a l'interieur des panneaux)
+    # Cremailleres (exterieur des panneaux)
+    for cx in [-CREM_W, CHAIR_WIDTH]:
+        ax2.add_patch(Rectangle((cx * s2, PANEL_H * s2),
+                                 CREM_W * s2, CREM_Z_HEIGHT * s2,
+                                 fc="#e8c88a", ec="black", lw=0.8))
+
+    # Supports dossier pivotants (a l'interieur des panneaux)
+    sup_bot_z = PIVOT_Z - SUPPORT_BELOW * math.cos(math.radians(BACKREST_TILT))
     for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - FRAME_W]:
-        ax2.add_patch(Rectangle((bx*s2, 0), FRAME_W*s2, TOTAL_H*s2,
+        ax2.add_patch(Rectangle((bx*s2, sup_bot_z*s2),
+                                 FRAME_W*s2, (TOTAL_H - sup_bot_z)*s2,
                                  fc=W1, ec="black", lw=0.6, ls="--", alpha=0.5))
 
-    # Dossier lattes (hauteur projetee a cos(35 deg))
+    # Barre transversale (depasse de chaque cote)
+    bz_bar = PIVOT_Z + BAR_DIST * math.cos(math.radians(BACKREST_TILT))
+    bar_full_w = CHAIR_WIDTH + 2 * CREM_W
+    ax2.add_patch(Rectangle((-CREM_W * s2, (bz_bar - BAR_SECTION / 2) * s2),
+                             bar_full_w * s2, BAR_SECTION * s2,
+                             fc="#c06030", ec="black", lw=0.8))
+
+    # Dossier lattes (hauteur projetee)
     slat_proj_h = SLAT_W * math.cos(math.radians(BACKREST_TILT))
     for i in range(N_BACK_SLATS):
         along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
         frac = along / BACK_LENGTH
-        bz = SEAT_H + frac * BACK_DZ
+        bz = PIVOT_Z + frac * BACK_DZ
         ax2.add_patch(Rectangle((PANEL_W*s2, bz*s2),
                                 INNER_WIDTH*s2, slat_proj_h*s2,
                                 fc=W3, ec="black", lw=0.5))
@@ -348,7 +445,7 @@ def generate_pdf():
     _add_dim_v(ax2, CHAIR_WIDTH*s2, 0, TOTAL_H*s2,
                f"{TOTAL_H:.0f}", offset=12)
 
-    ax2.set_xlim(-15, CHAIR_WIDTH*s2 + 40)
+    ax2.set_xlim(-CREM_W*s2 - 10, (CHAIR_WIDTH + CREM_W)*s2 + 30)
     ax2.set_ylim(-12, TOTAL_H*s2 + 25)
     ax2.grid(True, alpha=0.2)
     ax2.set_xlabel("mm"); ax2.set_ylabel("mm")
@@ -385,19 +482,26 @@ def generate_pdf():
     # ===================== CARTOUCHE =====================
     ax_info = fig.add_axes([0.04, 0.04, 0.92, 0.26])
     ax_info.axis("off")
-    n_pieces = N_SEAT_SLATS + N_BACK_SLATS + 4 + 6 + 2 + 1  # A+B+C/D+E+F+G
+    # A+B+C+D+E+F+G + H(crem x2) + I(barre x1)
+    n_pieces = N_SEAT_SLATS + N_BACK_SLATS + 4 + 6 + 2 + 1 + 2 + 1
+    angles_str = "/".join(f"{a:.0f}" for a in BACKREST_ANGLES)
     info = (
         "Objet : Deck Chair de Jardin en Palettes Recyclees\n"
         f"Dimensions : {CHAIR_WIDTH:.0f} x {RUNNER_L:.0f} x {TOTAL_H:.0f} mm "
         f"(L x P x H)  |  Assise : {SEAT_H:.0f} mm\n"
-        f"Assise : {N_SEAT_SLATS} lattes de {SLAT_W:.0f} x {SLAT_T:.0f} mm  |  "
-        f"Dossier : {N_BACK_SLATS} lattes, incline ~{90 + BACKREST_TILT:.0f} deg\n"
-        f"Panneaux lateraux style palette (planche + blocs {BLOCK_H:.0f} mm + planche)\n"
-        f"Supports dossier continus ({SUPPORT_FULL_L:.0f} mm) du sol au sommet\n"
-        f"Sans accoudoirs  |  Longerons depassent de {RUNNER_EXTEND:.0f} mm "
-        f"a l'arriere\n"
-        f"Materiau : 1 euro-palette  |  {n_pieces} pieces  |  Echelle 1:1 (mm)\n"
-        "Inspire de : instructables.com/A-Deck-Chair-Made-From-Pallet-Wood-Leftovers"
+        f"Assise : {N_SEAT_SLATS} lattes  |  "
+        f"Dossier : {N_BACK_SLATS} lattes, inclinable 3 positions "
+        f"({angles_str} deg)\n"
+        f"Mecanisme cremaillere : pivot + barre transversale + "
+        f"2 blocs crantes\n"
+        f"Panneaux lateraux style palette (planche + blocs "
+        f"{BLOCK_H:.0f} mm + planche)\n"
+        f"Sans accoudoirs  |  Longerons depassent de "
+        f"{RUNNER_EXTEND:.0f} mm a l'arriere\n"
+        f"Materiau : 1 euro-palette  |  {n_pieces} pieces  |  "
+        f"Echelle 1:1 (mm)\n"
+        "Inspire de : instructables.com/A-Deck-Chair-Made-From-"
+        "Pallet-Wood-Leftovers"
     )
     ax_info.text(0.5, 0.5, info, transform=ax_info.transAxes,
                  fontsize=8, va="center", ha="center",

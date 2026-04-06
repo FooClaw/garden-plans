@@ -1,6 +1,6 @@
 """Generateur de nomenclature PDF - Deck Chair de jardin.
 
-Structure palette : panneaux lateraux + blocs + supports continus. 22 pieces, 1 palette.
+Structure palette, dossier inclinable 3 positions (cremaillere). 25 pieces, 1 palette.
 """
 import math
 import os
@@ -13,7 +13,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 PDF_PATH = os.path.join(OUTPUT_DIR, "nomenclature.pdf")
 WOOD1, WOOD2, WOOD3, WOOD4 = "#d2a679", "#c49a6c", "#b8956a", "#a0784e"
+BAR_COLOR = "#c06030"; CREM_COLOR = "#e8c88a"
 
+CHAIR_W = 600
 SLAT_W = 95; SLAT_T = 22; SLAT_GAP = 15
 PANEL_W = 95; BLOCK_H = 78; BLOCK_W = 44
 PANEL_H = SLAT_T + BLOCK_H + SLAT_T  # 122
@@ -22,10 +24,18 @@ N_SEAT = 4; N_BACK = 5
 SEAT_DEPTH = N_SEAT * SLAT_W + (N_SEAT - 1) * SLAT_GAP
 RUNNER_EXTEND = 350; RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND
 BACKREST_TILT = 35; BACK_LENGTH = 650
-FRAME_W = 44; FRAME_D = 70; INNER_W = 600 - 2 * PANEL_W
+FRAME_W = 44; FRAME_D = 70; INNER_W = CHAIR_W - 2 * PANEL_W
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
-TOTAL_H = SEAT_H + BACK_DZ
-SUPPORT_FULL_L = TOTAL_H / math.cos(math.radians(BACKREST_TILT))
+PIVOT_Y = SEAT_DEPTH; PIVOT_Z = PANEL_H
+TOTAL_H = PIVOT_Z + BACK_DZ
+SUPPORT_BELOW = 50.0
+SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
+BAR_DIST = 60.0; BAR_SECTION = 30.0
+CREM_W = SLAT_T; CREM_Z_HEIGHT = BLOCK_H
+BACKREST_ANGLES = [25.0, 35.0, 50.0]
+_BP = [(PIVOT_Y + BAR_DIST * math.sin(math.radians(a)),
+        PIVOT_Z + BAR_DIST * math.cos(math.radians(a))) for a in BACKREST_ANGLES]
+CREM_L = max(p[0] for p in _BP) - min(p[0] for p in _BP) + 2 * BAR_SECTION + BAR_SECTION
 
 PIECES = [
     ("A", "Latte assise", 4, "600 x 95 x 22", "Lattes pleine largeur", WOOD2),
@@ -33,20 +43,23 @@ PIECES = [
     ("C", "Planche lat. basse", 2, f"{RUNNER_L:.0f} x 95 x 22", "Lattes pleine largeur", WOOD1),
     ("D", "Planche lat. haute", 2, f"{RUNNER_L:.0f} x 95 x 22", "Lattes pleine largeur", WOOD1),
     ("E", "Bloc lateral", 6, f"44 x 44 x {BLOCK_H:.0f}", "Blocs de palette", WOOD4),
-    ("F", "Support dossier", 2, f"{SUPPORT_FULL_L:.0f} x 70 x 44", "2 lattes collees", WOOD1),
+    ("F", "Support dossier", 2, f"{SUPPORT_PIVOT_L:.0f} x 70 x 44", "2 lattes collees", WOOD1),
     ("G", "Traverse avant", 1, f"{INNER_W:.0f} x 44 x 22", "Latte recoupee", WOOD3),
+    ("H", "Cremaillere", 2, f"{CREM_L:.0f} x {CREM_W} x {CREM_Z_HEIGHT:.0f}", "Bloc palette", CREM_COLOR),
+    ("I", "Barre transversale", 1, f"{CHAIR_W + 2*CREM_W:.0f} x 30 x 30", "Latte recoupee", BAR_COLOR),
 ]
 
 TOOLS = [
     ("Pied-de-biche / levier", "Demontage des lattes et blocs"),
     ("Arrache-clou / tenaille", "Retrait des clous"),
     ("Scie circulaire + guide", "Decoupe a longueur"),
-    ("Scie a onglet", "Decoupe precision"),
+    ("Scie a onglet", "Decoupe encoches cremaillere"),
     ("Ponceuse orbitale", "Poncage (80, 120, 180)"),
     ("Visseuse + vis 4x50 mm", "Assemblage"),
     ("Serre-joints (x4)", "Collage supports dossier"),
     ("Colle a bois D3", "Collage pieces doublees"),
-    ("Fausse equerre", "Angle dossier ~125 deg"),
+    ("Fausse equerre", "Angle dossier (25/35/50 deg)"),
+    ("Boulon M10 x 120 + rondelles", "Pivot dossier (x2)"),
 ]
 
 ASSEMBLY = [
@@ -56,10 +69,11 @@ ASSEMBLY = [
     ("Panneaux lat.", "Planche basse + 3 blocs + planche haute (x2)"),
     ("Traverses", "Visser traverse avant G entre les panneaux"),
     ("Assise", f"Visser {N_SEAT} lattes A (espacement {SLAT_GAP:.0f} mm)"),
-    ("Angle", f"Preparer l'angle a {BACKREST_TILT} deg (fausse equerre)"),
-    ("Supports", f"Coller 2 lattes pour F, couper a {SUPPORT_FULL_L:.0f} mm, boulonner"),
-    ("Dossier", f"Visser {N_BACK} lattes B inclinées a {BACKREST_TILT} deg sur supports"),
-    ("Verification", "Controler stabilite, angle, alignement, fixations"),
+    ("Cremailleres", "Tailler 3 encoches en V dans H, fixer sur l'exterieur"),
+    ("Supports", f"Coller F, monter sur pivot M10 au sommet du panneau"),
+    ("Barre", "Inserer barre I dans les supports, bloquer avec goupilles"),
+    ("Dossier", f"Visser {N_BACK} lattes B sur supports"),
+    ("Verification", "Tester les 3 positions, controler stabilite"),
     ("Finition", "Huile de lin, vernis ou lasure"),
 ]
 
@@ -73,14 +87,16 @@ def new_page(pdf, title, subtitle=None):
 
 def page_cover(pdf):
     fig, ax = new_page(pdf, "Nomenclature", "Deck Chair de Jardin en Palettes Recyclees")
-    ax.text(50, 122, "Design minimaliste - panneaux lateraux palette, sans accoudoirs", ha="center", fontsize=11, style="italic", color=WOOD4)
-    ax.add_patch(Rectangle((15, 85), 70, 30, fc="#faf5ef", ec=WOOD4, lw=1.5))
+    ax.text(50, 122, "Dossier inclinable 3 positions - mecanisme cremaillere", ha="center", fontsize=11, style="italic", color=WOOD4)
+    ax.add_patch(Rectangle((15, 82), 70, 33, fc="#faf5ef", ec=WOOD4, lw=1.5))
+    angles = "/".join(f"{a:.0f}" for a in BACKREST_ANGLES)
     summary = [
         ("Materiau", "1 euro-palette standard"),
         ("Dimensions", f"600 x {RUNNER_L:.0f} x {TOTAL_H:.0f} mm (L x P x H)"),
         ("Assise", f"{SEAT_H:.0f} mm (tres basse, style transat)"),
-        ("Dossier", f"Incline a ~{90+BACKREST_TILT} degres"),
-        ("Pieces", f"{sum(p[2] for p in PIECES)} pieces (7 references)"),
+        ("Dossier", f"Inclinable {angles} deg (cremaillere)"),
+        ("Pieces", f"{sum(p[2] for p in PIECES)} pieces ({len(PIECES)} references)"),
+        ("Mecanisme", "Pivot + barre + 2 cremailleres"),
     ]
     for i, (label, value) in enumerate(summary):
         y = 110 - i * 5
