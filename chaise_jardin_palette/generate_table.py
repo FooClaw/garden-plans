@@ -74,22 +74,33 @@ TOTAL_H = PIVOT_Z + BACK_DZ            # hauteur totale (position par defaut)
 SUPPORT_BELOW = 50.0                                   # extension sous le pivot
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW           # longueur totale support
 
-# Barre transversale d'appui (I) - relie les supports, depasse dans les crans
-BAR_DIST = 60.0              # distance du pivot le long du support
-BAR_SECTION = 30.0           # section carree (mm)
+# Barre stabilisatrice (I) - du haut du dossier a la cremaillere
+STRUT_ATTACH = 400.0         # point d'attache sur le support (depuis le pivot)
+STRUT_L = 380.0              # longueur de la barre stabilisatrice
+STRUT_SECTION = SLAT_T       # section 22 mm
 
-# Cremaillere (H) - blocs crantes sur l'exterieur de chaque panneau
-CREM_W = SLAT_T              # 22 mm (largeur en X)
-CREM_Z_HEIGHT = BLOCK_H      # 78 mm (hauteur, utilise des blocs palette)
+# Cremaillere (H) - support crante a l'INTERIEUR des panneaux
+CREM_W = SLAT_T              # 22 mm (epaisseur en X)
+CREM_HEIGHT = 40.0           # hauteur (Z) - suffisant pour les encoches
 
-# Positions de la barre aux differents angles
-_BAR_POSITIONS = []
+# Positions des encoches sur la cremaillere pour chaque angle
+_NOTCH_POSITIONS = []
 for _a in BACKREST_ANGLES:
     _r = math.radians(_a)
-    _BAR_POSITIONS.append((PIVOT_Y + BAR_DIST * math.sin(_r),
-                           PIVOT_Z + BAR_DIST * math.cos(_r)))
-CREM_Y_START = min(p[0] for p in _BAR_POSITIONS) - BAR_SECTION
-CREM_L = max(p[0] for p in _BAR_POSITIONS) - CREM_Y_START + 2 * BAR_SECTION
+    _yt = PIVOT_Y + STRUT_ATTACH * math.sin(_r)
+    _zt = PIVOT_Z + STRUT_ATTACH * math.cos(_r)
+    _yd = math.sqrt(STRUT_L**2 - (_zt - PIVOT_Z)**2)
+    _NOTCH_POSITIONS.append(_yt - _yd)
+CREM_Y_START = min(_NOTCH_POSITIONS) - STRUT_SECTION
+CREM_L = max(_NOTCH_POSITIONS) - CREM_Y_START + 2 * STRUT_SECTION
+
+# Geometrie de la barre stab. a l'angle par defaut (pour STL)
+_dr = math.radians(BACKREST_TILT)
+_syt = PIVOT_Y + STRUT_ATTACH * math.sin(_dr)
+_szt = PIVOT_Z + STRUT_ATTACH * math.cos(_dr)
+_syd = math.sqrt(STRUT_L**2 - (_szt - PIVOT_Z)**2)
+STRUT_Y_BOT = _syt - _syd                                    # pied de la barre
+STRUT_TILT = math.degrees(math.atan2(_syd, _szt - PIVOT_Z))  # inclinaison
 
 # Espacement des lattes de dossier le long de l'axe incline
 BACK_SLATS_TOTAL = N_BACK_SLATS * SLAT_W + (N_BACK_SLATS - 1) * SLAT_GAP
@@ -203,17 +214,16 @@ def generate_stl():
             bx, sup_base_y, sup_base_z,
             FRAME_W, FRAME_D, SUPPORT_PIVOT_L, BACKREST_TILT))
 
-    # === CREMAILLERES (x2) - blocs crantes sur l'exterieur des panneaux ===
-    for cx in [-CREM_W, CHAIR_WIDTH]:
+    # === CREMAILLERES (x2) - supports crantes a l'INTERIEUR des panneaux ===
+    for cx in [PANEL_W, CHAIR_WIDTH - PANEL_W - CREM_W]:
         all_faces.extend(_box_faces(cx, CREM_Y_START, PANEL_H,
-                                    CREM_W, CREM_L, CREM_Z_HEIGHT))
+                                    CREM_W, CREM_L, CREM_HEIGHT))
 
-    # === BARRE TRANSVERSALE (x1) - repose dans les crans ===
-    bar_y = PIVOT_Y + BAR_DIST * math.sin(_tilt_rad)
-    bar_z = PIVOT_Z + BAR_DIST * math.cos(_tilt_rad)
-    all_faces.extend(_box_faces(
-        -CREM_W, bar_y - BAR_SECTION / 2, bar_z - BAR_SECTION / 2,
-        CHAIR_WIDTH + 2 * CREM_W, BAR_SECTION, BAR_SECTION))
+    # === BARRES STABILISATRICES (x2) - du dossier a la cremaillere ===
+    for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - STRUT_SECTION]:
+        all_faces.extend(_tilted_box_faces(
+            bx, STRUT_Y_BOT, PIVOT_Z,
+            STRUT_SECTION, STRUT_SECTION, STRUT_L, STRUT_TILT))
 
     # === LATTES DE DOSSIER (x5) - inclinées à 35°, entre les supports ===
     back_start_x = PANEL_W
@@ -299,36 +309,53 @@ def generate_pdf():
     _sn, _cs = math.sin(_rad), math.cos(_rad)
     pys, pzs = PIVOT_Y * s, PIVOT_Z * s
 
-    # Cremaillere (bloc derriere le pivot)
+    # Cremaillere (H) a l'interieur du panneau, sur le longeron
     ax1.add_patch(Rectangle((CREM_Y_START * s, PANEL_H * s),
-                             CREM_L * s, CREM_Z_HEIGHT * s,
+                             CREM_L * s, CREM_HEIGHT * s,
                              fc="#e8c88a", ec="black", lw=1))
     ax1.text((CREM_Y_START + CREM_L / 2) * s,
-             (PANEL_H + CREM_Z_HEIGHT / 2) * s, "H",
+             (PANEL_H + CREM_HEIGHT / 2) * s, "H",
              ha="center", va="center", fontsize=7, fontweight="bold")
 
-    # Positions alternatives du dossier (fantomes)
+    # Positions alternatives du dossier + barre stab. (fantomes)
     for angle in BACKREST_ANGLES:
-        if angle == BACKREST_TILT:
-            continue
         ar = math.radians(angle)
         asn, acs = math.sin(ar), math.cos(ar)
         sb_y = PIVOT_Y - SUPPORT_BELOW * asn
         sb_z = PIVOT_Z - SUPPORT_BELOW * acs
         st_y = PIVOT_Y + BACK_LENGTH * asn
         st_z = PIVOT_Z + BACK_LENGTH * acs
-        pts = [
-            [sb_y * s, sb_z * s],
-            [(sb_y + FRAME_D * asn) * s, (sb_z + FRAME_D * acs) * s],
-            [(st_y + FRAME_D * asn) * s, (st_z + FRAME_D * acs) * s],
-            [st_y * s, st_z * s],
-        ]
-        ax1.add_patch(Polygon(pts, closed=True, fc="none", ec="#999",
-                               lw=0.7, ls="--", alpha=0.6))
-        ax1.text(st_y * s + 3, st_z * s,
-                 f"{angle:.0f}deg", fontsize=6, color="#999")
+        # Point d'attache de la barre stab.
+        att_y = PIVOT_Y + STRUT_ATTACH * asn
+        att_z = PIVOT_Z + STRUT_ATTACH * acs
+        zd = att_z - PIVOT_Z
+        yd = math.sqrt(STRUT_L**2 - zd**2)
+        ybot = att_y - yd
+        is_default = (angle == BACKREST_TILT)
+        if not is_default:
+            # Support fantome
+            pts = [
+                [sb_y * s, sb_z * s],
+                [(sb_y + FRAME_D * asn) * s, (sb_z + FRAME_D * acs) * s],
+                [(st_y + FRAME_D * asn) * s, (st_z + FRAME_D * acs) * s],
+                [st_y * s, st_z * s],
+            ]
+            ax1.add_patch(Polygon(pts, closed=True, fc="none", ec="#999",
+                                   lw=0.7, ls="--", alpha=0.5))
+            ax1.text(st_y * s + 3, st_z * s,
+                     f"{angle:.0f}deg", fontsize=6, color="#999")
+        # Barre stab. fantome (toutes positions)
+        clr = "black" if is_default else "#999"
+        lw = 1.5 if is_default else 0.7
+        ls = "-" if is_default else "--"
+        ax1.plot([ybot * s, att_y * s], [PIVOT_Z * s, att_z * s],
+                 color=clr, lw=lw, ls=ls, alpha=0.8 if is_default else 0.5)
+        if is_default:
+            ax1.text((ybot + att_y) / 2 * s - 8,
+                     (PIVOT_Z + att_z) / 2 * s,
+                     "I", fontsize=7, fontweight="bold", color="#c06030")
 
-    # Support dossier (position par defaut)
+    # Support dossier (position par defaut, plein)
     sb_y = PIVOT_Y - SUPPORT_BELOW * _sn
     sb_z = PIVOT_Z - SUPPORT_BELOW * _cs
     st_y = PIVOT_Y + BACK_LENGTH * _sn
@@ -344,16 +371,6 @@ def generate_pdf():
     # Pivot (cercle)
     ax1.add_patch(Circle((pys, pzs), 4 * s, fc="white", ec="red",
                           lw=1.5, zorder=5))
-
-    # Barre transversale
-    by_bar = PIVOT_Y + BAR_DIST * _sn
-    bz_bar = PIVOT_Z + BAR_DIST * _cs
-    ax1.add_patch(Rectangle(((by_bar - BAR_SECTION / 2) * s,
-                              (bz_bar - BAR_SECTION / 2) * s),
-                             BAR_SECTION * s, BAR_SECTION * s,
-                             fc="#c06030", ec="black", lw=1, zorder=4))
-    ax1.text((by_bar + BAR_SECTION) * s, bz_bar * s,
-             "I", fontsize=7, fontweight="bold", color="#c06030")
 
     # Lattes dossier (inclinées)
     for i in range(N_BACK_SLATS):
@@ -405,12 +422,6 @@ def generate_pdf():
     ax2.add_patch(Rectangle((0, PANEL_H*s2), CHAIR_WIDTH*s2, SLAT_T*s2,
                              fc=W2, ec="black", lw=1))
 
-    # Cremailleres (exterieur des panneaux)
-    for cx in [-CREM_W, CHAIR_WIDTH]:
-        ax2.add_patch(Rectangle((cx * s2, PANEL_H * s2),
-                                 CREM_W * s2, CREM_Z_HEIGHT * s2,
-                                 fc="#e8c88a", ec="black", lw=0.8))
-
     # Supports dossier pivotants (a l'interieur des panneaux)
     sup_bot_z = PIVOT_Z - SUPPORT_BELOW * math.cos(math.radians(BACKREST_TILT))
     for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - FRAME_W]:
@@ -418,12 +429,20 @@ def generate_pdf():
                                  FRAME_W*s2, (TOTAL_H - sup_bot_z)*s2,
                                  fc=W1, ec="black", lw=0.6, ls="--", alpha=0.5))
 
-    # Barre transversale (depasse de chaque cote)
-    bz_bar = PIVOT_Z + BAR_DIST * math.cos(math.radians(BACKREST_TILT))
-    bar_full_w = CHAIR_WIDTH + 2 * CREM_W
-    ax2.add_patch(Rectangle((-CREM_W * s2, (bz_bar - BAR_SECTION / 2) * s2),
-                             bar_full_w * s2, BAR_SECTION * s2,
-                             fc="#c06030", ec="black", lw=0.8))
+    # Cremailleres (a l'interieur des panneaux)
+    for cx in [PANEL_W, CHAIR_WIDTH - PANEL_W - CREM_W]:
+        ax2.add_patch(Rectangle((cx * s2, PANEL_H * s2),
+                                 CREM_W * s2, CREM_HEIGHT * s2,
+                                 fc="#e8c88a", ec="black", lw=0.8))
+
+    # Barres stabilisatrices (entre dossier et cremaillere)
+    strut_z_top = PIVOT_Z + STRUT_ATTACH * math.cos(math.radians(BACKREST_TILT))
+    for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - STRUT_SECTION]:
+        ax2.add_patch(Rectangle((bx * s2, PIVOT_Z * s2),
+                                 STRUT_SECTION * s2,
+                                 (strut_z_top - PIVOT_Z) * s2,
+                                 fc="#c06030", ec="black", lw=0.5,
+                                 ls="--", alpha=0.4))
 
     # Dossier lattes (hauteur projetee)
     slat_proj_h = SLAT_W * math.cos(math.radians(BACKREST_TILT))
@@ -445,7 +464,7 @@ def generate_pdf():
     _add_dim_v(ax2, CHAIR_WIDTH*s2, 0, TOTAL_H*s2,
                f"{TOTAL_H:.0f}", offset=12)
 
-    ax2.set_xlim(-CREM_W*s2 - 10, (CHAIR_WIDTH + CREM_W)*s2 + 30)
+    ax2.set_xlim(-15, CHAIR_WIDTH*s2 + 40)
     ax2.set_ylim(-12, TOTAL_H*s2 + 25)
     ax2.grid(True, alpha=0.2)
     ax2.set_xlabel("mm"); ax2.set_ylabel("mm")
@@ -482,8 +501,8 @@ def generate_pdf():
     # ===================== CARTOUCHE =====================
     ax_info = fig.add_axes([0.04, 0.04, 0.92, 0.26])
     ax_info.axis("off")
-    # A+B+C+D+E+F+G + H(crem x2) + I(barre x1)
-    n_pieces = N_SEAT_SLATS + N_BACK_SLATS + 4 + 6 + 2 + 1 + 2 + 1
+    # A+B+C+D+E+F+G + H(crem x2) + I(barre stab x2)
+    n_pieces = N_SEAT_SLATS + N_BACK_SLATS + 4 + 6 + 2 + 1 + 2 + 2
     angles_str = "/".join(f"{a:.0f}" for a in BACKREST_ANGLES)
     info = (
         "Objet : Deck Chair de Jardin en Palettes Recyclees\n"
@@ -492,8 +511,8 @@ def generate_pdf():
         f"Assise : {N_SEAT_SLATS} lattes  |  "
         f"Dossier : {N_BACK_SLATS} lattes, inclinable 3 positions "
         f"({angles_str} deg)\n"
-        f"Mecanisme cremaillere : pivot + barre transversale + "
-        f"2 blocs crantes\n"
+        f"Mecanisme cremaillere : pivot + 2 barres stabilisatrices + "
+        f"2 supports crantes internes\n"
         f"Panneaux lateraux style palette (planche + blocs "
         f"{BLOCK_H:.0f} mm + planche)\n"
         f"Sans accoudoirs  |  Longerons depassent de "

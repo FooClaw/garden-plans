@@ -36,13 +36,17 @@ PIVOT_Y = SEAT_DEPTH; PIVOT_Z = PANEL_H
 TOTAL_H = PIVOT_Z + BACK_DZ
 SUPPORT_BELOW = 50.0
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
-BAR_DIST = 60.0; BAR_SECTION = 30.0
-CREM_W = SLAT_T; CREM_Z_HEIGHT = BLOCK_H
-_BAR_POS = [(PIVOT_Y + BAR_DIST * math.sin(math.radians(a)),
-             PIVOT_Z + BAR_DIST * math.cos(math.radians(a)))
-            for a in BACKREST_ANGLES]
-CREM_Y_START = min(p[0] for p in _BAR_POS) - BAR_SECTION
-CREM_L = max(p[0] for p in _BAR_POS) - CREM_Y_START + 2 * BAR_SECTION
+STRUT_ATTACH = 400.0; STRUT_L = 380.0; STRUT_SECTION = SLAT_T
+CREM_W = SLAT_T; CREM_HEIGHT = 40.0
+_NP = []
+for _a in BACKREST_ANGLES:
+    _r = math.radians(_a)
+    _yt = PIVOT_Y + STRUT_ATTACH * math.sin(_r)
+    _zt = PIVOT_Z + STRUT_ATTACH * math.cos(_r)
+    _yd = math.sqrt(STRUT_L**2 - (_zt - PIVOT_Z)**2)
+    _NP.append(_yt - _yd)
+CREM_Y_START = min(_NP) - STRUT_SECTION
+CREM_L = max(_NP) - CREM_Y_START + 2 * STRUT_SECTION
 
 BACK_SLATS_TOTAL = N_BACK * SLAT_W + (N_BACK - 1) * SLAT_GAP
 BACK_SLAT_MARGIN = (BACK_LENGTH - BACK_SLATS_TOTAL) / 2
@@ -66,9 +70,9 @@ def draw_side(ax, x0, y0, s=0.04):
         ax.add_patch(Rectangle((x0+by*s, y0+SLAT_T*s), BLOCK_W*s, BLOCK_H*s, fc=WOOD4, ec="black", lw=0.6))
     # Planche haute
     ax.add_patch(Rectangle((x0, y0+(SLAT_T+BLOCK_H)*s), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
-    # Cremaillere
+    # Cremaillere (interieur panneau)
     ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+PANEL_H*s),
-                             CREM_L*s, CREM_Z_HEIGHT*s,
+                             CREM_L*s, CREM_HEIGHT*s,
                              fc="#e8c88a", ec="black", lw=0.8))
     # Assise
     ax.add_patch(Rectangle((x0, y0+PANEL_H*s), SEAT_DEPTH*s, SLAT_T*s, fc=WOOD2, ec="black", lw=0.8))
@@ -87,13 +91,14 @@ def draw_side(ax, x0, y0, s=0.04):
     # Pivot
     ax.add_patch(Circle((x0+PIVOT_Y*s, y0+PIVOT_Z*s), 3*s,
                          fc="white", ec="red", lw=1.2, zorder=5))
-    # Barre transversale
-    by_bar = PIVOT_Y + BAR_DIST * _sn
-    bz_bar = PIVOT_Z + BAR_DIST * _cs
-    ax.add_patch(Rectangle((x0+(by_bar-BAR_SECTION/2)*s,
-                             y0+(bz_bar-BAR_SECTION/2)*s),
-                            BAR_SECTION*s, BAR_SECTION*s,
-                            fc=BAR_COLOR, ec="black", lw=0.8, zorder=4))
+    # Barre stabilisatrice (du dossier a la cremaillere)
+    att_y = PIVOT_Y + STRUT_ATTACH * _sn
+    att_z = PIVOT_Z + STRUT_ATTACH * _cs
+    zd = att_z - PIVOT_Z
+    yd = math.sqrt(STRUT_L**2 - zd**2)
+    ybot = att_y - yd
+    ax.plot([x0+ybot*s, x0+att_y*s], [y0+PIVOT_Z*s, y0+att_z*s],
+            color=BAR_COLOR, lw=2, zorder=4)
     # Lattes dossier
     for i in range(N_BACK):
         along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
@@ -173,8 +178,8 @@ def page_cutting(pdf):
         ("E", "Bloc lateral x6", f"44 x 44 x {BLOCK_H}", WOOD4, 8),
         ("F", "Support dossier x2", f"{SUPPORT_PIVOT_L:.0f} x 70 x 44", WOOD1, 70),
         ("G", "Traverse avant x1", f"{INNER_W} x 44 x 22", WOOD3, 41),
-        ("H", "Cremaillere x2", f"{CREM_L:.0f} x {CREM_W} x {CREM_Z_HEIGHT:.0f}", "#e8c88a", 10),
-        ("I", "Barre transv. x1", f"{CHAIR_W + 2*CREM_W:.0f} x 30 x 30", BAR_COLOR, 64),
+        ("H", "Cremaillere x2", f"{CREM_L:.0f} x {CREM_W} x {CREM_HEIGHT:.0f}", "#e8c88a", 10),
+        ("I", "Barre stab. x2", f"{STRUT_L:.0f} x {STRUT_SECTION:.0f} x {STRUT_SECTION:.0f}", BAR_COLOR, 38),
     ]
     for i, (ref, name, dims, color, w) in enumerate(pieces):
         y = 118 - i * 11
@@ -306,9 +311,9 @@ def page_back_supports(pdf):
         "     Le support doit pivoter librement",
         "",
         "Cremaillere (H) :",
-        "  5. Fixer le bloc crante (H) sur l'EXTERIEUR du panneau",
-        "     Visser a travers le panneau dans le bloc",
-        f"  6. Tailler 3 encoches en V ({BAR_SECTION:.0f} mm) dans le haut",
+        "  5. Fixer le bloc crante (H) a l'INTERIEUR du panneau",
+        "     Sur le longeron, derriere le pivot",
+        f"  6. Tailler 3 encoches en V ({STRUT_SECTION:.0f} mm) dans le haut",
         "     pour les 3 positions (25/35/50 deg)",
         "",
         "Repeter pour le 2e cote (symetrique).",
@@ -362,8 +367,8 @@ def page_backrest(pdf):
 
 def page_mechanism(pdf):
     """Page expliquant le mecanisme cremaillere."""
-    fig, ax = new_page(pdf, "Etape 6b : Barre transversale (I)",
-                       "Installer la barre d'appui dans les cremailleres")
+    fig, ax = new_page(pdf, "Etape 6b : Barres stabilisatrices (I)",
+                       "Relier le dossier aux cremailleres")
     # Schema : vue de cote simplifiee avec les 3 positions
     x0, y0, s = 10, 55, 0.05
     # Panneau simplifie
@@ -371,14 +376,14 @@ def page_mechanism(pdf):
                             fc=WOOD1, ec="black", lw=0.8, alpha=0.3))
     # Cremaillere
     ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+PANEL_H*s),
-                             CREM_L*s, CREM_Z_HEIGHT*s,
+                             CREM_L*s, CREM_HEIGHT*s,
                              fc="#e8c88a", ec="black", lw=1.2))
-    ax.text(x0+(CREM_Y_START+CREM_L/2)*s, y0+(PANEL_H+CREM_Z_HEIGHT/2)*s,
+    ax.text(x0+(CREM_Y_START+CREM_L/2)*s, y0+(PANEL_H+CREM_HEIGHT/2)*s,
             "H", ha="center", va="center", fontsize=9, fontweight="bold")
     # Pivot
     px, py = x0+PIVOT_Y*s, y0+PIVOT_Z*s
     ax.add_patch(Circle((px, py), 2.5*s, fc="white", ec="red", lw=1.5, zorder=5))
-    # 3 positions
+    # 3 positions avec barre stabilisatrice
     colors_pos = ["#2196F3", "#4CAF50", "#FF9800"]
     labels = ["25 deg (assis)", "35 deg (detendu)", "50 deg (allonge)"]
     for idx, angle in enumerate(BACKREST_ANGLES):
@@ -389,27 +394,34 @@ def page_mechanism(pdf):
         st_z = PIVOT_Z + BACK_LENGTH * 0.4 * acs
         ax.plot([px, x0+st_y*s], [py, y0+st_z*s],
                 color=colors_pos[idx], lw=2.5, alpha=0.7)
-        # Bar position
-        by = PIVOT_Y + BAR_DIST * asn
-        bz = PIVOT_Z + BAR_DIST * acs
-        ax.add_patch(Circle((x0+by*s, y0+bz*s), 2*s,
+        # Barre stab. de l'attache a la cremaillere
+        att_y = PIVOT_Y + STRUT_ATTACH * asn
+        att_z = PIVOT_Z + STRUT_ATTACH * acs
+        zd = att_z - PIVOT_Z
+        yd_s = math.sqrt(STRUT_L**2 - zd**2)
+        ybot = att_y - yd_s
+        ax.plot([x0+ybot*s, x0+att_y*s], [y0+PIVOT_Z*s, y0+att_z*s],
+                color=colors_pos[idx], lw=1.5, alpha=0.7, ls="--")
+        ax.add_patch(Circle((x0+ybot*s, y0+PIVOT_Z*s), 1.5*s,
                              fc=colors_pos[idx], ec="black", lw=0.5, zorder=4))
         ax.text(x0+st_y*s+2, y0+st_z*s, labels[idx],
                 fontsize=8, color=colors_pos[idx], fontweight="bold")
     steps = [
-        f"1. Couper la barre (I) a {CHAIR_W + 2*CREM_W:.0f} mm (section 30 x 30)",
-        f"   Elle depasse de {CREM_W} mm de chaque cote",
+        f"1. Couper 2 barres (I) a {STRUT_L:.0f} mm (section {STRUT_SECTION:.0f} x {STRUT_SECTION:.0f})",
         "",
-        f"2. Percer un trou de 10 mm a {BAR_DIST:.0f} mm du pivot dans chaque support",
-        "   Inserer la barre et bloquer avec goupilles ou vis",
+        f"2. Fixer le haut de chaque barre au support (F) a {STRUT_ATTACH:.0f} mm du pivot",
+        "   Pivot avec boulon M8 pour que la barre puisse pivoter",
         "",
-        "3. Pour changer de position :",
-        "   - Soulever le dossier pour degager la barre",
+        "3. Le pied de la barre repose dans une encoche de la cremaillere (H)",
+        "",
+        "4. Pour changer de position :",
+        "   - Soulever legerement le dossier",
+        "   - Degager la barre de l'encoche",
         "   - Incliner au cran souhaite",
-        "   - Laisser la barre tomber dans l'encoche",
+        "   - Laisser la barre tomber dans la nouvelle encoche",
         "",
         "Les 3 encoches dans la cremaillere (H) sont en V",
-        f"  Largeur : {BAR_SECTION:.0f} mm | Profondeur : 25-40 mm",
+        f"  Largeur : {STRUT_SECTION:.0f} mm | Profondeur : 25-35 mm",
     ]
     for i, line in enumerate(steps):
         ax.text(10, 47 - i * 3.3, line, fontsize=9,
