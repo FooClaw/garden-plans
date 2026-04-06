@@ -56,8 +56,10 @@ ASSEMBLY = [
     ("Panneaux lat.", "Planche basse + 3 blocs + planche haute (x2)"),
     ("Traverses", "Visser traverse avant G entre les panneaux"),
     ("Assise", f"Visser {N_SEAT} lattes A (espacement {SLAT_GAP:.0f} mm)"),
-    ("Supports", "Boulonner supports F a travers panneaux (angle 35 deg)"),
-    ("Dossier", f"Visser {N_BACK} lattes B sur supports dossier"),
+    ("Angle", f"Preparer l'angle a {BACKREST_TILT} deg (fausse equerre)"),
+    ("Supports", f"Coller 2 lattes pour F, couper a {SUPPORT_FULL_L:.0f} mm, boulonner"),
+    ("Dossier", f"Visser {N_BACK} lattes B inclinées a {BACKREST_TILT} deg sur supports"),
+    ("Verification", "Controler stabilite, angle, alignement, fixations"),
     ("Finition", "Huile de lin, vernis ou lasure"),
 ]
 

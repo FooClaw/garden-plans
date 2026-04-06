@@ -69,6 +69,10 @@ TOTAL_H = SEAT_H + BACK_DZ
 SUPPORT_BASE_Y = SEAT_DEPTH - SEAT_H * math.tan(math.radians(BACKREST_TILT))
 SUPPORT_FULL_L = TOTAL_H / math.cos(math.radians(BACKREST_TILT))
 
+# Espacement des lattes de dossier le long de l'axe incline
+BACK_SLATS_TOTAL = N_BACK_SLATS * SLAT_W + (N_BACK_SLATS - 1) * SLAT_GAP
+BACK_SLAT_MARGIN = (BACK_LENGTH - BACK_SLATS_TOTAL) / 2
+
 
 def _box_faces(x, y, z, dx, dy, dz):
     """12 triangles (6 faces) d'un parallelipede."""
@@ -96,6 +100,43 @@ def _tilted_box_faces(x, y, z, width, depth, length, tilt_deg):
         [x+width, y+depth, z], [x, y+depth, z],
         [x, y+dy, z+dz], [x+width, y+dy, z+dz],
         [x+width, y+depth+dy, z+dz], [x, y+depth+dy, z+dz],
+    ])
+    return [
+        [v[0],v[2],v[1]], [v[0],v[3],v[2]],
+        [v[4],v[5],v[6]], [v[4],v[6],v[7]],
+        [v[0],v[1],v[5]], [v[0],v[5],v[4]],
+        [v[2],v[3],v[7]], [v[2],v[7],v[6]],
+        [v[0],v[4],v[7]], [v[0],v[7],v[3]],
+        [v[1],v[2],v[6]], [v[1],v[6],v[5]],
+    ]
+
+
+def _backrest_slat_faces(x, y, z, width, slat_w, slat_t, tilt_deg):
+    """Latte de dossier inclinee a l'angle du dossier.
+
+    La face arriere est contre le support, la face avant pointe vers
+    l'assise.  *slat_w* court le long du dossier, *slat_t* est
+    l'epaisseur perpendiculaire a la surface du dossier.
+    """
+    rad = math.radians(tilt_deg)
+    sn, cs = math.sin(rad), math.cos(rad)
+    # Vecteur le long du dossier (monte et recule)
+    dyw = slat_w * sn
+    dzw = slat_w * cs
+    # Vecteur perpendiculaire (vers l'assise / le devant)
+    dyt = -slat_t * cs
+    dzt = slat_t * sn
+    v = np.array([
+        # Face arriere (sur le support)
+        [x,       y,           z],
+        [x+width, y,           z],
+        [x+width, y+dyw,       z+dzw],
+        [x,       y+dyw,       z+dzw],
+        # Face avant (vers l'assise)
+        [x,       y+dyt,       z+dzt],
+        [x+width, y+dyt,       z+dzt],
+        [x+width, y+dyw+dyt,   z+dzw+dzt],
+        [x,       y+dyw+dyt,   z+dzw+dzt],
     ])
     return [
         [v[0],v[2],v[1]], [v[0],v[3],v[2]],
@@ -139,15 +180,17 @@ def generate_stl():
             bx, SUPPORT_BASE_Y, 0,
             FRAME_W, FRAME_D, SUPPORT_FULL_L, BACKREST_TILT))
 
-    # === LATTES DE DOSSIER (x5) - entre les panneaux lateraux ===
+    # === LATTES DE DOSSIER (x5) - inclinées à 35°, entre les supports ===
     back_start_x = PANEL_W
     back_slat_w = INNER_WIDTH
     for i in range(N_BACK_SLATS):
-        frac = (i + 0.5) / N_BACK_SLATS
+        along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
+        frac = along / BACK_LENGTH
         bz = SEAT_H + frac * BACK_DZ
         by = SEAT_DEPTH + frac * BACK_DY
-        all_faces.extend(_box_faces(back_start_x, by, bz,
-                                    back_slat_w, SLAT_T, SLAT_W))
+        all_faces.extend(_backrest_slat_faces(
+            back_start_x, by, bz,
+            back_slat_w, SLAT_W, SLAT_T, BACKREST_TILT))
 
     # === TRAVERSE AVANT (entre les panneaux, sous l'assise) ===
     all_faces.extend(_box_faces(PANEL_W, 0, PANEL_H - SLAT_T,
@@ -228,13 +271,23 @@ def generate_pdf():
     ]
     ax1.add_patch(Polygon(back_pts, closed=True, fc=W1, ec="black", lw=1.2))
 
-    # Lattes dossier
+    # Lattes dossier (inclinées a 35 deg)
+    _rad = math.radians(BACKREST_TILT)
+    _sn, _cs = math.sin(_rad), math.cos(_rad)
     for i in range(N_BACK_SLATS):
-        frac = (i + 0.5) / N_BACK_SLATS
-        bz = PANEL_H + SLAT_T + frac * BACK_DZ
-        by = SEAT_DEPTH + frac * BACK_DY
-        ax1.add_patch(Rectangle((by*s, bz*s), SLAT_T*s, SLAT_W*s,
-                                fc=W3, ec="black", lw=0.6))
+        along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
+        frac = along / BACK_LENGTH
+        by0 = SEAT_DEPTH + frac * BACK_DY
+        bz0 = SEAT_H + frac * BACK_DZ
+        # 4 coins du profil de latte dans le plan Y-Z
+        pts = [
+            [by0 * s,                              bz0 * s],
+            [(by0 + SLAT_W * _sn) * s,             (bz0 + SLAT_W * _cs) * s],
+            [(by0 + SLAT_W * _sn - SLAT_T * _cs) * s,
+             (bz0 + SLAT_W * _cs + SLAT_T * _sn) * s],
+            [(by0 - SLAT_T * _cs) * s,             (bz0 + SLAT_T * _sn) * s],
+        ]
+        ax1.add_patch(Polygon(pts, closed=True, fc=W3, ec="black", lw=0.6))
 
     _add_dim_h(ax1, 0, RUNNER_L*s, TOTAL_H*s, f"{RUNNER_L:.0f} mm", offset=8)
     _add_dim_v(ax1, -5, 0, SEAT_H*s, f"{SEAT_H:.0f}", offset=-18)
@@ -278,12 +331,14 @@ def generate_pdf():
         ax2.add_patch(Rectangle((bx, 0), FRAME_W*s2, TOTAL_H*s2,
                                  fc=W1, ec="black", lw=0.6, ls="--", alpha=0.5))
 
-    # Dossier lattes
+    # Dossier lattes (hauteur projetee a cos(35 deg))
+    slat_proj_h = SLAT_W * math.cos(math.radians(BACKREST_TILT))
     for i in range(N_BACK_SLATS):
-        frac = (i + 0.5) / N_BACK_SLATS
+        along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
+        frac = along / BACK_LENGTH
         bz = SEAT_H + frac * BACK_DZ
         ax2.add_patch(Rectangle((PANEL_W*s2, bz*s2),
-                                INNER_WIDTH*s2, SLAT_W*s2,
+                                INNER_WIDTH*s2, slat_proj_h*s2,
                                 fc=W3, ec="black", lw=0.5))
 
     # Traverse avant

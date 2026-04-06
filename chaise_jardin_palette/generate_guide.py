@@ -29,6 +29,8 @@ INNER_W = CHAIR_W - 2 * PANEL_W  # 410
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
 BACK_DY = BACK_LENGTH * math.sin(math.radians(BACKREST_TILT))
 TOTAL_H = SEAT_H + BACK_DZ
+BACK_SLATS_TOTAL = N_BACK * SLAT_W + (N_BACK - 1) * SLAT_GAP
+BACK_SLAT_MARGIN = (BACK_LENGTH - BACK_SLATS_TOTAL) / 2
 
 def new_page(pdf, title, subtitle=None):
     fig, ax = plt.subplots(figsize=(8.27, 11.69))
@@ -63,12 +65,22 @@ def draw_side(ax, x0, y0, s=0.04):
     ax.add_patch(Polygon(pts, closed=True, fc=WOOD1, ec="black", lw=1))
     # Assise
     ax.add_patch(Rectangle((x0, y0+PANEL_H*s), SEAT_DEPTH*s, SLAT_T*s, fc=WOOD2, ec="black", lw=0.8))
-    # Lattes dossier
+    # Lattes dossier (inclinées à 35 deg)
+    _rad = math.radians(BACKREST_TILT)
+    _sn, _cs = math.sin(_rad), math.cos(_rad)
     for i in range(N_BACK):
-        frac = (i + 0.5) / N_BACK
-        bz = PANEL_H + SLAT_T + frac * BACK_DZ
-        by = SEAT_DEPTH + frac * BACK_DY
-        ax.add_patch(Rectangle((x0+by*s, y0+bz*s), SLAT_T*s, SLAT_W*s, fc=WOOD3, ec="black", lw=0.5))
+        along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
+        frac = along / BACK_LENGTH
+        by0 = SEAT_DEPTH + frac * BACK_DY
+        bz0 = SEAT_H + frac * BACK_DZ
+        pts = [
+            [x0 + by0 * s,                                y0 + bz0 * s],
+            [x0 + (by0 + SLAT_W * _sn) * s,               y0 + (bz0 + SLAT_W * _cs) * s],
+            [x0 + (by0 + SLAT_W * _sn - SLAT_T * _cs) * s,
+             y0 + (bz0 + SLAT_W * _cs + SLAT_T * _sn) * s],
+            [x0 + (by0 - SLAT_T * _cs) * s,               y0 + (bz0 + SLAT_T * _sn) * s],
+        ]
+        ax.add_patch(Polygon(pts, closed=True, fc=WOOD3, ec="black", lw=0.5))
 
 def draw_front(ax, x0, y0, s=0.04):
     """Vue de face simplifiee."""
@@ -184,37 +196,187 @@ def page_seat(pdf):
     ax.text(50, 45, f"Hauteur d'assise : seulement {SEAT_H} mm !", ha="center", fontsize=10, fontweight="bold", color=WOOD4)
     pdf.savefig(fig); plt.close(fig)
 
+def page_angle_prep(pdf):
+    """Page detaillant la preparation de l'angle a 35 deg."""
+    fig, ax = new_page(pdf, "Etape 4b : Preparation de l'angle",
+                       "Tracer et couper l'angle du dossier")
+    # Schema de l'angle
+    x0, y0 = 20, 85
+    s = 0.08
+    # Sol
+    ax.plot([x0, x0 + 80], [y0, y0], "k-", lw=1.5)
+    # Support vertical (reference)
+    ax.plot([x0 + 40, x0 + 40], [y0, y0 + 40], "k--", lw=0.8, alpha=0.5)
+    ax.text(x0 + 42, y0 + 38, "verticale", fontsize=7, color="#999")
+    # Support incline
+    length = 45
+    rad = math.radians(BACKREST_TILT)
+    dx = length * math.sin(rad)
+    dy = length * math.cos(rad)
+    ax.plot([x0 + 40, x0 + 40 + dx], [y0, y0 + dy], color=WOOD4, lw=3)
+    ax.text(x0 + 40 + dx + 2, y0 + dy, "F", fontsize=10,
+            fontweight="bold", color=WOOD4)
+    # Arc pour l'angle
+    import matplotlib.patches as mpatches
+    arc = mpatches.Arc((x0 + 40, y0), 20, 20, angle=90,
+                       theta1=0, theta2=BACKREST_TILT,
+                       color="red", lw=1.5)
+    ax.add_patch(arc)
+    ax.text(x0 + 44, y0 + 12, f"{BACKREST_TILT} deg", fontsize=10,
+            color="red", fontweight="bold")
+    # Arc pour l'angle avec l'assise
+    arc2 = mpatches.Arc((x0 + 40, y0), 30, 30, angle=0,
+                        theta1=90 - BACKREST_TILT, theta2=90,
+                        color="blue", lw=1)
+    ax.add_patch(arc2)
+
+    steps = [
+        "1. Regler la fausse equerre a 35 deg par rapport a la verticale",
+        f"   (= {90 + BACKREST_TILT} deg par rapport a l'horizontale de l'assise)",
+        "",
+        "2. Reporter l'angle sur les 2 supports dossier (F)",
+        f"   Longueur totale du support : {SUPPORT_FULL_L:.0f} mm",
+        "",
+        "3. Couper le pied du support en biseau a 35 deg",
+        "   pour qu'il repose a plat au sol",
+        "",
+        "4. Couper le sommet du support en biseau inverse",
+        "   pour que le haut soit horizontal",
+        "",
+        "5. Verifier les 2 supports ensemble :",
+        "   - Meme longueur a +/- 2 mm",
+        "   - Memes angles de coupe",
+        "   - Poser cote a cote pour comparer",
+    ]
+    for i, line in enumerate(steps):
+        ax.text(10, 72 - i * 3.5, line, fontsize=9,
+                color="#333" if not line.startswith("   ") else "#555")
+    ax.text(50, 15, "ASTUCE : tracer sur un panneau de MDF un gabarit grandeur nature",
+            ha="center", fontsize=9, fontweight="bold", color=WOOD4)
+    pdf.savefig(fig); plt.close(fig)
+
 def page_back_supports(pdf):
     fig, ax = new_page(pdf, "Etape 5 : Supports dossier")
-    ax.text(50, 125, "Fixer les 2 supports dossier (F) - continus du sol au sommet", ha="center", fontsize=10, color="#666")
+    ax.text(50, 125, "Fixer les 2 supports dossier (F) - continus du sol au sommet",
+            ha="center", fontsize=10, color="#666")
     draw_side(ax, 10, 65, 0.055)
-    ax.annotate(f"Support dossier (F)\n{SUPPORT_FULL_L:.0f} x 70 x 44 mm\nAngle ~35 deg", xy=(55, 95), fontsize=9, color=WOOD4, fontweight="bold")
-    ax.text(50, 58, "2 lattes collees face a face (section 44 x 70 mm)", ha="center", fontsize=10)
-    ax.text(50, 52, f"Angle : ~{BACKREST_TILT} deg de la verticale  |  Utiliser une fausse equerre", ha="center", fontsize=9, color="red")
-    ax.text(50, 46, "Support continu du sol au sommet - boulonne au panneau lateral", ha="center", fontsize=9, fontweight="bold", color=WOOD4)
-    ax.text(50, 40, "2 boulons M8 par cote a travers panneau + support", ha="center", fontsize=9, color="#555")
+    ax.annotate(f"Support dossier (F)\n{SUPPORT_FULL_L:.0f} x 70 x 44 mm\nAngle ~{BACKREST_TILT} deg",
+                xy=(55, 95), fontsize=9, color=WOOD4, fontweight="bold")
+
+    # Instructions detaillees
+    steps = [
+        "Assemblage du support :",
+        "  1. Coller 2 lattes face a face (section 44 x 70 mm)",
+        "     Serrer avec 4 serre-joints, laisser secher 24h",
+        "",
+        "Fixation au panneau lateral :",
+        f"  2. Positionner le support contre le panneau a Y = {SUPPORT_BASE_Y:.0f} mm",
+        "     Le pied du support repose au sol, le haut depasse",
+        f"  3. Verifier l'angle a {BACKREST_TILT} deg avec la fausse equerre",
+        "  4. Percer 2 trous de 8 mm a travers panneau + support",
+        "     - Trou bas : ~60 mm au-dessus du sol",
+        f"     - Trou haut : ~{PANEL_H - 20} mm (sous la planche haute)",
+        "  5. Boulonner avec M8 x 100 mm + rondelles + ecrous",
+        "",
+        "Repeter pour le 2e cote (symetrique).",
+        "Verifier que les 2 supports sont paralleles.",
+    ]
+    for i, line in enumerate(steps):
+        y = 58 - i * 3.2
+        bold = not line.startswith(" ") and line.endswith(":")
+        ax.text(10, y, line, fontsize=8,
+                fontweight="bold" if bold else "normal",
+                color=WOOD4 if bold else "#333")
     pdf.savefig(fig); plt.close(fig)
 
 def page_backrest(pdf):
     fig, ax = new_page(pdf, "Etape 6 : Pose du dossier")
     ax.text(50, 125, f"Visser les {N_BACK} lattes (B) sur les supports", ha="center", fontsize=10, color="#666")
+    # Vue arriere (X-Z) avec hauteur projetee des lattes
     s = 0.04
     x0 = 15; y0 = 60
+    slat_proj_h = SLAT_W * math.cos(math.radians(BACKREST_TILT))
     for px in [0, CHAIR_W - PANEL_W]:
-        bx = px + (PANEL_W-FRAME_W)/2
-        ax.add_patch(Rectangle((x0+bx*s, y0+SEAT_H*s), FRAME_W*s, BACK_DZ*s, fc=WOOD1, ec="black", lw=1))
+        bx = px + (PANEL_W - FRAME_W) / 2
+        ax.add_patch(Rectangle((x0 + bx * s, y0 + SEAT_H * s),
+                                FRAME_W * s, BACK_DZ * s,
+                                fc=WOOD1, ec="black", lw=1))
     for i in range(N_BACK):
-        frac = (i + 0.5) / N_BACK
+        along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
+        frac = along / BACK_LENGTH
         bz = SEAT_H + frac * BACK_DZ
-        ax.add_patch(Rectangle((x0+PANEL_W*s, y0+bz*s), INNER_W*s, SLAT_W*s, fc=WOOD3, ec="black", lw=0.7))
+        ax.add_patch(Rectangle((x0 + PANEL_W * s, y0 + bz * s),
+                                INNER_W * s, slat_proj_h * s,
+                                fc=WOOD3, ec="black", lw=0.7))
         if i == 0:
-            ax.text(x0+CHAIR_W*s/2, y0+(bz+SLAT_W/2)*s, "B", ha="center", va="center", fontsize=10, fontweight="bold", color="white")
-    ax.text(50, y0-5, f"Vue arriere - {N_BACK} lattes de {INNER_W} x 95 mm", ha="center", fontsize=9, color="#666")
-    ax.text(50, y0-12, f"2 vis par latte et par support = {N_BACK*4} vis", ha="center", fontsize=10, fontweight="bold")
+            ax.text(x0 + CHAIR_W * s / 2,
+                    y0 + (bz + slat_proj_h / 2) * s,
+                    "B", ha="center", va="center", fontsize=10,
+                    fontweight="bold", color="white")
+    ax.text(50, y0 - 3, f"Vue arriere - {N_BACK} lattes de {INNER_W} x 95 mm",
+            ha="center", fontsize=9, color="#666")
+    ax.text(50, y0 - 9, f"2 vis par latte et par support = {N_BACK * 4} vis",
+            ha="center", fontsize=10, fontweight="bold")
+    # Instructions detaillees
+    tips = [
+        f"- Commencer par la latte du bas, {BACK_SLAT_MARGIN:.0f} mm au-dessus de l'assise (le long du support)",
+        f"- Espacement de {SLAT_GAP} mm entre chaque latte (utiliser une cale)",
+        "- Pre-percer les lattes pour eviter de fendre le bois",
+        "- Vis 4x50 mm, 2 par cote, a ~20 mm des bords de la latte",
+        "- Verifier l'equerrage avec une equerre avant de serrer",
+    ]
+    for i, tip in enumerate(tips):
+        ax.text(10, y0 - 16 - i * 5, tip, fontsize=8, color="#333")
+    pdf.savefig(fig); plt.close(fig)
+
+def page_verification(pdf):
+    """Page de verification avant finition."""
+    fig, ax = new_page(pdf, "Etape 7 : Verification",
+                       "Controles avant finition")
+    checks = [
+        ("Stabilite", [
+            "Poser la chaise sur une surface plane",
+            "Verifier qu'elle ne bascule pas (4 points d'appui au sol)",
+            "S'asseoir doucement pour tester la solidite",
+        ]),
+        ("Angle du dossier", [
+            f"Verifier l'angle de {90 + BACKREST_TILT} deg entre assise et dossier",
+            "Utiliser la fausse equerre pour controler",
+            "Le dossier doit etre confortable en position allongee",
+        ]),
+        ("Alignement des lattes", [
+            "Les lattes d'assise doivent etre paralleles entre elles",
+            f"Espacement regulier de {SLAT_GAP} mm entre les lattes",
+            "Les lattes de dossier suivent l'inclinaison du support",
+        ]),
+        ("Fixations", [
+            "Toutes les vis doivent etre serrees et affleurantes",
+            "Les boulons M8 des supports doivent etre bien bloques",
+            "Aucun jeu dans les assemblages",
+        ]),
+        ("Securite", [
+            "Pas d'eclats ni d'aretes vives (poncer si necessaire)",
+            "Pas de clous ou vis qui depassent",
+            "Verifier la solidite des panneaux lateraux",
+        ]),
+    ]
+    y = 120
+    for title, items in checks:
+        ax.add_patch(Rectangle((8, y - 1), 84, 4 + len(items) * 3.5,
+                                fc="#faf5ef", ec=WOOD4, lw=0.8))
+        ax.text(12, y + len(items) * 3.5 - 0.5, title,
+                fontsize=10, fontweight="bold", color=WOOD4)
+        for j, item in enumerate(items):
+            ax.text(14, y + (len(items) - 1 - j) * 3.5 - 0.5,
+                    f"[ ]  {item}", fontsize=8, color="#333")
+        y -= 5 + len(items) * 3.5
+
+    ax.text(50, 15, "Si tout est OK, passer a la finition !",
+            ha="center", fontsize=11, fontweight="bold", color="green")
     pdf.savefig(fig); plt.close(fig)
 
 def page_finishing(pdf):
-    fig, ax = new_page(pdf, "Etape 7 : Finition")
+    fig, ax = new_page(pdf, "Etape 8 : Finition")
     ax.text(50, 125, "Proteger et embellir votre deck chair", ha="center", fontsize=11, color="#666")
     draw_front(ax, 25, 90, 0.04)
     options = [
@@ -261,8 +423,10 @@ def generate_guide():
         page_cutting(pdf)
         page_panels(pdf)
         page_seat(pdf)
+        page_angle_prep(pdf)
         page_back_supports(pdf)
         page_backrest(pdf)
+        page_verification(pdf)
         page_finishing(pdf)
         page_final(pdf)
     print(f"Guide PDF genere : {PDF_PATH} ({os.path.getsize(PDF_PATH) // 1024} Ko)")
