@@ -28,20 +28,21 @@ FRAME_W = 44; FRAME_D = 70; INNER_W = CHAIR_W - 2 * PANEL_W
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
 PIVOT_Y = SEAT_DEPTH; PIVOT_Z = SLAT_T + BLOCK_H / 2  # entre les planches
 TOTAL_H = PIVOT_Z + BACK_DZ
-CREM_TOP_Z = SLAT_T + 40  # sommet cremaillere
+RAIL_TOP_Z = SLAT_T + SLAT_T  # sommet du rail (44mm)
 SUPPORT_BELOW = 50.0
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
 STRUT_ATTACH = 400.0; STRUT_L = 380.0; STRUT_SECTION = SLAT_T
-CREM_W = SLAT_T; CREM_HEIGHT = 40.0
+RAIL_W = SLAT_T; RAIL_SECTION = SLAT_T
 BACKREST_ANGLES = [25.0, 35.0, 50.0]
 _NP = []
 for _a in BACKREST_ANGLES:
     _r = math.radians(_a)
     _yt = PIVOT_Y + STRUT_ATTACH * math.sin(_r)
     _zt = PIVOT_Z + STRUT_ATTACH * math.cos(_r)
-    _yd = math.sqrt(STRUT_L**2 - (_zt - CREM_TOP_Z)**2)
+    _yd = math.sqrt(STRUT_L**2 - (_zt - RAIL_TOP_Z)**2)
     _NP.append(_yt - _yd)
-CREM_L = max(_NP) - min(_NP) + 3 * STRUT_SECTION
+RAIL_Y_START = PIVOT_Y
+RAIL_LENGTH = max(_NP) - RAIL_Y_START + 2 * STRUT_SECTION
 
 PIECES = [
     ("A", "Latte assise", 4, "600 x 95 x 22", "Lattes pleine largeur", WOOD2),
@@ -51,7 +52,7 @@ PIECES = [
     ("E", "Bloc lateral", 6, f"44 x 44 x {BLOCK_H:.0f}", "Blocs de palette", WOOD4),
     ("F", "Support dossier", 2, f"{SUPPORT_PIVOT_L:.0f} x 70 x 44", "2 lattes collees", WOOD1),
     ("G", "Traverse avant", 1, f"{INNER_W:.0f} x 44 x 22", "Latte recoupee", WOOD3),
-    ("H", "Cremaillere", 2, f"{CREM_L:.0f} x {CREM_W} x {CREM_HEIGHT:.0f}", "Bloc palette", CREM_COLOR),
+    ("H", "Rail crante", 2, f"{RAIL_LENGTH:.0f} x {RAIL_W} x {RAIL_SECTION}", "Latte recoupee", CREM_COLOR),
     ("I", "Barre stabilisatrice", 2, f"{STRUT_L:.0f} x {STRUT_SECTION} x {STRUT_SECTION}", "Latte recoupee", BAR_COLOR),
 ]
 
@@ -75,9 +76,9 @@ ASSEMBLY = [
     ("Panneaux lat.", "Planche basse + 3 blocs + planche haute (x2)"),
     ("Traverses", "Visser traverse avant G entre les panneaux"),
     ("Assise", f"Visser {N_SEAT} lattes A (espacement {SLAT_GAP:.0f} mm)"),
-    ("Cremailleres", "Tailler 3 encoches en V dans H, fixer a l'INTERIEUR"),
+    ("Rails", "Percer 3 trous de 10 mm dans H, fixer entre les planches"),
     ("Supports", f"Coller F, monter sur pivot M10 au sommet du panneau"),
-    ("Barres stab.", "Fixer barres I au support, pied dans cremaillere"),
+    ("Barres stab.", "Fixer barres I au support, pied sur rail + goupille"),
     ("Dossier", f"Visser {N_BACK} lattes B sur supports"),
     ("Verification", "Tester les 3 positions, controler stabilite"),
     ("Finition", "Huile de lin, vernis ou lasure"),
