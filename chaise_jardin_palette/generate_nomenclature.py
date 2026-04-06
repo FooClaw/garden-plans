@@ -26,8 +26,9 @@ RUNNER_EXTEND = 350; RUNNER_L = SEAT_DEPTH + RUNNER_EXTEND
 BACKREST_TILT = 35; BACK_LENGTH = 650
 FRAME_W = 44; FRAME_D = 70; INNER_W = CHAIR_W - 2 * PANEL_W
 BACK_DZ = BACK_LENGTH * math.cos(math.radians(BACKREST_TILT))
-PIVOT_Y = SEAT_DEPTH; PIVOT_Z = PANEL_H
+PIVOT_Y = SEAT_DEPTH; PIVOT_Z = SLAT_T + BLOCK_H / 2  # entre les planches
 TOTAL_H = PIVOT_Z + BACK_DZ
+CREM_TOP_Z = SLAT_T + 40  # sommet cremaillere
 SUPPORT_BELOW = 50.0
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
 STRUT_ATTACH = 400.0; STRUT_L = 380.0; STRUT_SECTION = SLAT_T
@@ -38,7 +39,7 @@ for _a in BACKREST_ANGLES:
     _r = math.radians(_a)
     _yt = PIVOT_Y + STRUT_ATTACH * math.sin(_r)
     _zt = PIVOT_Z + STRUT_ATTACH * math.cos(_r)
-    _yd = math.sqrt(STRUT_L**2 - (_zt - PIVOT_Z)**2)
+    _yd = math.sqrt(STRUT_L**2 - (_zt - CREM_TOP_Z)**2)
     _NP.append(_yt - _yd)
 CREM_L = max(_NP) - min(_NP) + 3 * STRUT_SECTION
 

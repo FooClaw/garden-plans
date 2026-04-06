@@ -32,8 +32,10 @@ BACK_DY = BACK_LENGTH * math.sin(math.radians(BACKREST_TILT))
 
 # Mecanisme
 BACKREST_ANGLES = [25.0, 35.0, 50.0]
-PIVOT_Y = SEAT_DEPTH; PIVOT_Z = PANEL_H
+PIVOT_Y = SEAT_DEPTH; PIVOT_Z = SLAT_T + BLOCK_H / 2  # entre les planches
 TOTAL_H = PIVOT_Z + BACK_DZ
+DIST_TO_SEAT = (SEAT_H - PIVOT_Z) / math.cos(math.radians(BACKREST_TILT))
+CREM_BASE_Z = SLAT_T; CREM_TOP_Z = CREM_BASE_Z + 40
 SUPPORT_BELOW = 50.0
 SUPPORT_PIVOT_L = BACK_LENGTH + SUPPORT_BELOW
 STRUT_ATTACH = 400.0; STRUT_L = 380.0; STRUT_SECTION = SLAT_T
@@ -43,13 +45,15 @@ for _a in BACKREST_ANGLES:
     _r = math.radians(_a)
     _yt = PIVOT_Y + STRUT_ATTACH * math.sin(_r)
     _zt = PIVOT_Z + STRUT_ATTACH * math.cos(_r)
-    _yd = math.sqrt(STRUT_L**2 - (_zt - PIVOT_Z)**2)
+    _yd = math.sqrt(STRUT_L**2 - (_zt - CREM_TOP_Z)**2)
     _NP.append(_yt - _yd)
 CREM_Y_START = min(_NP) - STRUT_SECTION
 CREM_L = max(_NP) - CREM_Y_START + 2 * STRUT_SECTION
 
 BACK_SLATS_TOTAL = N_BACK * SLAT_W + (N_BACK - 1) * SLAT_GAP
-BACK_SLAT_MARGIN = (BACK_LENGTH - BACK_SLATS_TOTAL) / 2
+BACK_VISIBLE = BACK_LENGTH - DIST_TO_SEAT
+BACK_SLAT_MARGIN = (BACK_VISIBLE - BACK_SLATS_TOTAL) / 2
+BACK_SLAT_START = DIST_TO_SEAT + BACK_SLAT_MARGIN
 
 def new_page(pdf, title, subtitle=None):
     fig, ax = plt.subplots(figsize=(8.27, 11.69))
@@ -70,9 +74,9 @@ def draw_side(ax, x0, y0, s=0.04):
         ax.add_patch(Rectangle((x0+by*s, y0+SLAT_T*s), BLOCK_W*s, BLOCK_H*s, fc=WOOD4, ec="black", lw=0.6))
     # Planche haute
     ax.add_patch(Rectangle((x0, y0+(SLAT_T+BLOCK_H)*s), RUNNER_L*s, SLAT_T*s, fc=WOOD1, ec="black", lw=1))
-    # Cremaillere (interieur panneau)
-    ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+PANEL_H*s),
-                             CREM_L*s, CREM_HEIGHT*s,
+    # Cremaillere (entre les planches laterales)
+    ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+CREM_BASE_Z*s),
+                             CREM_L*s, (CREM_TOP_Z - CREM_BASE_Z)*s,
                              fc="#e8c88a", ec="black", lw=0.8))
     # Assise
     ax.add_patch(Rectangle((x0, y0+PANEL_H*s), SEAT_DEPTH*s, SLAT_T*s, fc=WOOD2, ec="black", lw=0.8))
@@ -94,14 +98,14 @@ def draw_side(ax, x0, y0, s=0.04):
     # Barre stabilisatrice (du dossier a la cremaillere)
     att_y = PIVOT_Y + STRUT_ATTACH * _sn
     att_z = PIVOT_Z + STRUT_ATTACH * _cs
-    zd = att_z - PIVOT_Z
+    zd = att_z - CREM_TOP_Z
     yd = math.sqrt(STRUT_L**2 - zd**2)
     ybot = att_y - yd
-    ax.plot([x0+ybot*s, x0+att_y*s], [y0+PIVOT_Z*s, y0+att_z*s],
+    ax.plot([x0+ybot*s, x0+att_y*s], [y0+CREM_TOP_Z*s, y0+att_z*s],
             color=BAR_COLOR, lw=2, zorder=4)
     # Lattes dossier
     for i in range(N_BACK):
-        along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
+        along = BACK_SLAT_START + i * (SLAT_W + SLAT_GAP)
         frac = along / BACK_LENGTH
         by0 = PIVOT_Y + frac * BACK_DY
         bz0 = PIVOT_Z + frac * BACK_DZ
@@ -338,7 +342,7 @@ def page_backrest(pdf):
                                 FRAME_W * s, BACK_DZ * s,
                                 fc=WOOD1, ec="black", lw=1))
     for i in range(N_BACK):
-        along = BACK_SLAT_MARGIN + i * (SLAT_W + SLAT_GAP)
+        along = BACK_SLAT_START + i * (SLAT_W + SLAT_GAP)
         frac = along / BACK_LENGTH
         bz = SEAT_H + frac * BACK_DZ
         ax.add_patch(Rectangle((x0 + PANEL_W * s, y0 + bz * s),
@@ -355,7 +359,7 @@ def page_backrest(pdf):
             ha="center", fontsize=10, fontweight="bold")
     # Instructions detaillees
     tips = [
-        f"- Commencer par la latte du bas, {BACK_SLAT_MARGIN:.0f} mm au-dessus de l'assise (le long du support)",
+        f"- Commencer par la latte du bas, {BACK_SLAT_START:.0f} mm du pivot (le long du support)",
         f"- Espacement de {SLAT_GAP} mm entre chaque latte (utiliser une cale)",
         "- Pre-percer les lattes pour eviter de fendre le bois",
         "- Vis 4x50 mm, 2 par cote, a ~20 mm des bords de la latte",
@@ -375,10 +379,10 @@ def page_mechanism(pdf):
     ax.add_patch(Rectangle((x0, y0), RUNNER_L*s, PANEL_H*s,
                             fc=WOOD1, ec="black", lw=0.8, alpha=0.3))
     # Cremaillere
-    ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+PANEL_H*s),
-                             CREM_L*s, CREM_HEIGHT*s,
+    ax.add_patch(Rectangle((x0+CREM_Y_START*s, y0+CREM_BASE_Z*s),
+                             CREM_L*s, (CREM_TOP_Z - CREM_BASE_Z)*s,
                              fc="#e8c88a", ec="black", lw=1.2))
-    ax.text(x0+(CREM_Y_START+CREM_L/2)*s, y0+(PANEL_H+CREM_HEIGHT/2)*s,
+    ax.text(x0+(CREM_Y_START+CREM_L/2)*s, y0+((CREM_BASE_Z+CREM_TOP_Z)/2)*s,
             "H", ha="center", va="center", fontsize=9, fontweight="bold")
     # Pivot
     px, py = x0+PIVOT_Y*s, y0+PIVOT_Z*s
@@ -397,12 +401,12 @@ def page_mechanism(pdf):
         # Barre stab. de l'attache a la cremaillere
         att_y = PIVOT_Y + STRUT_ATTACH * asn
         att_z = PIVOT_Z + STRUT_ATTACH * acs
-        zd = att_z - PIVOT_Z
-        yd_s = math.sqrt(STRUT_L**2 - zd**2)
+        zd = att_z - CREM_TOP_Z
+        yd_s = math.sqrt(max(0, STRUT_L**2 - zd**2))
         ybot = att_y - yd_s
-        ax.plot([x0+ybot*s, x0+att_y*s], [y0+PIVOT_Z*s, y0+att_z*s],
+        ax.plot([x0+ybot*s, x0+att_y*s], [y0+CREM_TOP_Z*s, y0+att_z*s],
                 color=colors_pos[idx], lw=1.5, alpha=0.7, ls="--")
-        ax.add_patch(Circle((x0+ybot*s, y0+PIVOT_Z*s), 1.5*s,
+        ax.add_patch(Circle((x0+ybot*s, y0+CREM_TOP_Z*s), 1.5*s,
                              fc=colors_pos[idx], ec="black", lw=0.5, zorder=4))
         ax.text(x0+st_y*s+2, y0+st_z*s, labels[idx],
                 fontsize=8, color=colors_pos[idx], fontweight="bold")
