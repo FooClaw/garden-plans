@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck Chair de Jardin en Palettes Recyclees - Garden Plans</title>
+    <style>
+        :root {
+            --wood1: #d2a679;
+            --wood2: #c49a6c;
+            --wood3: #b8956a;
+            --wood4: #a0784e;
+            --bg: #faf6f0;
+            --text: #3a2e1e;
+            --text-light: #6b5a45;
+            --card-bg: #ffffff;
+            --shadow: rgba(160, 120, 78, 0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, var(--wood4) 0%, var(--wood2) 100%);
+            color: white;
+            padding: 2rem 1rem;
+        }
+        header a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; }
+        header a:hover { color: white; }
+        header h1 { font-size: 2rem; margin-top: 0.5rem; }
+        header p { opacity: 0.9; max-width: 700px; margin-top: 0.5rem; }
+        main { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--wood4);
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid var(--wood1);
+        }
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .spec-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+        .spec-card .value { font-size: 1.4rem; font-weight: 700; color: var(--wood4); }
+        .spec-card .label { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; }
+        .downloads {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .dl-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 10px var(--shadow);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .dl-card:hover { transform: translateY(-2px); }
+        .dl-card a {
+            text-decoration: none;
+            color: var(--wood4);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .dl-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .dl-card .desc { font-size: 0.8rem; color: var(--text-light); margin-top: 0.3rem; }
+        table.bom {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+        table.bom th {
+            background: var(--wood4);
+            color: white;
+            padding: 0.7rem;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        table.bom td {
+            padding: 0.6rem 0.7rem;
+            border-bottom: 1px solid #f0e8dc;
+            font-size: 0.9rem;
+        }
+        table.bom tr:nth-child(even) { background: #faf5ef; }
+        .color-dot {
+            display: inline-block;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+            vertical-align: middle;
+        }
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            margin: 1rem 0;
+        }
+        .steps li {
+            counter-increment: step;
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1rem 1rem 1rem 3.5rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 2px 8px var(--shadow);
+            position: relative;
+        }
+        .steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 1rem;
+            top: 1rem;
+            background: var(--wood4);
+            color: white;
+            width: 1.8rem; height: 1.8rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .steps li strong { color: var(--wood4); }
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            border-top: 1px solid #e8ddd0;
+        }
+        footer a { color: var(--wood4); }
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.5rem; }
+            .specs-grid { grid-template-columns: repeat(2, 1fr); }
+            .downloads { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="../">&larr; Retour aux projets</a>
+    <h1>Deck Chair de Jardin en Palettes Recyclees</h1>
+    <p>Chaise de jardin minimaliste type deck chair, 100% bois de palette.
+       Assise tres basse (144 mm), dossier incline a ~125&deg;, sans accoudoirs.
+       Panneaux lateraux style palette. Design fidele au modele Instructables de Well Done Tips.</p>
+</header>
+
+<main>
+    <h2 class="section-title">Dimensions</h2>
+    <div class="specs-grid">
+        <div class="spec-card">
+            <div class="value">600 mm</div>
+            <div class="label">Largeur</div>
+        </div>
+        <div class="spec-card">
+            <div class="value">775 mm</div>
+            <div class="label">Profondeur</div>
+        </div>
+        <div class="spec-card">
+            <div class="value">677 mm</div>
+            <div class="label">Hauteur</div>
+        </div>
+        <div class="spec-card">
+            <div class="value">144 mm</div>
+            <div class="label">Assise</div>
+        </div>
+        <div class="spec-card">
+            <div class="value">~125&deg;</div>
+            <div class="label">Angle dossier</div>
+        </div>
+        <div class="spec-card">
+            <div class="value">1</div>
+            <div class="label">Palette</div>
+        </div>
+        <div class="spec-card">
+            <div class="value">22</div>
+            <div class="label">Pieces</div>
+        </div>
+        <div class="spec-card">
+            <div class="value">95 mm</div>
+            <div class="label">Largeur lattes</div>
+        </div>
+    </div>
+
+    <h2 class="section-title">Fichiers a telecharger</h2>
+    <div class="downloads">
+        <div class="dl-card">
+            <div class="icon">&#9649;</div>
+            <a href="chaise_jardin_palette.stl">Modele 3D STL</a>
+            <div class="desc">Maillage 3D pour impression ou visualisation</div>
+        </div>
+        <div class="dl-card">
+            <div class="icon">&#9634;</div>
+            <a href="chaise_jardin_palette_plan.pdf">Plan technique PDF</a>
+            <div class="desc">Vues de face, dessus et cote cotees</div>
+        </div>
+        <div class="dl-card">
+            <div class="icon">&#9997;</div>
+            <a href="guide_construction.pdf">Guide 10 pages</a>
+            <div class="desc">Guide illustre pas a pas</div>
+        </div>
+        <div class="dl-card">
+            <div class="icon">&#9776;</div>
+            <a href="nomenclature.pdf">Nomenclature PDF</a>
+            <div class="desc">Liste de debit, outillage et assemblage</div>
+        </div>
+    </div>
+
+    <h2 class="section-title">Nomenclature</h2>
+    <table class="bom">
+        <thead>
+            <tr>
+                <th>Ref</th>
+                <th>Piece</th>
+                <th>Qte</th>
+                <th>Dimensions (mm)</th>
+                <th>Origine palette</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="color-dot" style="background:#c49a6c"></span>A</td>
+                <td>Latte assise</td>
+                <td>4</td>
+                <td>600 x 95 x 22</td>
+                <td>Lattes pleine largeur</td>
+            </tr>
+            <tr>
+                <td><span class="color-dot" style="background:#b8956a"></span>B</td>
+                <td>Latte dossier</td>
+                <td>5</td>
+                <td>410 x 95 x 22</td>
+                <td>Lattes pleine largeur</td>
+            </tr>
+            <tr>
+                <td><span class="color-dot" style="background:#d2a679"></span>C</td>
+                <td>Planche lat. basse</td>
+                <td>2</td>
+                <td>775 x 95 x 22</td>
+                <td>Lattes pleine largeur</td>
+            </tr>
+            <tr>
+                <td><span class="color-dot" style="background:#d2a679"></span>D</td>
+                <td>Planche lat. haute</td>
+                <td>2</td>
+                <td>775 x 95 x 22</td>
+                <td>Lattes pleine largeur</td>
+            </tr>
+            <tr>
+                <td><span class="color-dot" style="background:#a0784e"></span>E</td>
+                <td>Bloc lateral</td>
+                <td>6</td>
+                <td>44 x 44 x 78</td>
+                <td>Blocs de palette</td>
+            </tr>
+            <tr>
+                <td><span class="color-dot" style="background:#d2a679"></span>F</td>
+                <td>Support dossier</td>
+                <td>2</td>
+                <td>826 x 70 x 44</td>
+                <td>2 lattes collees</td>
+            </tr>
+            <tr>
+                <td><span class="color-dot" style="background:#b8956a"></span>G</td>
+                <td>Traverse avant</td>
+                <td>1</td>
+                <td>410 x 44 x 22</td>
+                <td>Latte recoupee</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="section-title">Etapes de construction</h2>
+    <ol class="steps">
+        <li><strong>Demontage</strong> &mdash; Demonter la palette, conserver lattes ET blocs</li>
+        <li><strong>Debit</strong> &mdash; Decouper toutes les pieces aux bonnes dimensions</li>
+        <li><strong>Poncage</strong> &mdash; Poncer toutes les pieces (grains 80, 120, 180)</li>
+        <li><strong>Panneaux lateraux</strong> &mdash; Planche basse + 3 blocs + planche haute (x2)</li>
+        <li><strong>Traverse</strong> &mdash; Visser traverse avant G entre les panneaux</li>
+        <li><strong>Assise</strong> &mdash; Visser 4 lattes A (espacement 15 mm)</li>
+        <li><strong>Supports dossier</strong> &mdash; Boulonner supports F a travers les panneaux (angle ~35&deg;)</li>
+        <li><strong>Dossier</strong> &mdash; Visser 5 lattes B sur les supports</li>
+        <li><strong>Finition</strong> &mdash; Huile de lin, vernis ou lasure</li>
+    </ol>
+</main>
+
+<footer>
+    <p><a href="../">Garden Plans</a> &mdash; Projets open source de meubles de jardin DIY</p>
+    <p><a href="https://github.com/FooClaw/garden-plans">Voir sur GitHub</a></p>
+</footer>
+
+</body>
+</html>
