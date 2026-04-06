@@ -257,7 +257,7 @@ def page_angle_prep(pdf):
 
 def page_back_supports(pdf):
     fig, ax = new_page(pdf, "Etape 5 : Supports dossier")
-    ax.text(50, 125, "Fixer les 2 supports dossier (F) - continus du sol au sommet",
+    ax.text(50, 125, "Fixer les 2 supports dossier (F) a l'interieur des panneaux",
             ha="center", fontsize=10, color="#666")
     draw_side(ax, 10, 65, 0.055)
     ax.annotate(f"Support dossier (F)\n{SUPPORT_FULL_L:.0f} x 70 x 44 mm\nAngle ~{BACKREST_TILT} deg",
@@ -269,8 +269,8 @@ def page_back_supports(pdf):
         "  1. Coller 2 lattes face a face (section 44 x 70 mm)",
         "     Serrer avec 4 serre-joints, laisser secher 24h",
         "",
-        "Fixation au panneau lateral :",
-        f"  2. Positionner le support contre le panneau a Y = {SUPPORT_BASE_Y:.0f} mm",
+        "Fixation a l'interieur du panneau lateral :",
+        f"  2. Positionner le support contre la face interne du panneau a Y = {SUPPORT_BASE_Y:.0f} mm",
         "     Le pied du support repose au sol, le haut depasse",
         f"  3. Verifier l'angle a {BACKREST_TILT} deg avec la fausse equerre",
         "  4. Percer 2 trous de 8 mm a travers panneau + support",
@@ -296,8 +296,7 @@ def page_backrest(pdf):
     s = 0.04
     x0 = 15; y0 = 60
     slat_proj_h = SLAT_W * math.cos(math.radians(BACKREST_TILT))
-    for px in [0, CHAIR_W - PANEL_W]:
-        bx = px + (PANEL_W - FRAME_W) / 2
+    for bx in [PANEL_W, CHAIR_W - PANEL_W - FRAME_W]:
         ax.add_patch(Rectangle((x0 + bx * s, y0 + SEAT_H * s),
                                 FRAME_W * s, BACK_DZ * s,
                                 fc=WOOD1, ec="black", lw=1))

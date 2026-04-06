@@ -172,10 +172,8 @@ def generate_stl():
         all_faces.extend(_box_faces(0, sy, PANEL_H,
                                     CHAIR_WIDTH, SLAT_W, SLAT_T))
 
-    # === SUPPORTS DOSSIER (x2) - continus du sol au sommet du dossier ===
-    # Un seul support incline par cote, boulonne a travers le panneau lateral
-    for side_x in [0, CHAIR_WIDTH - PANEL_W]:
-        bx = side_x + (PANEL_W - FRAME_W) / 2
+    # === SUPPORTS DOSSIER (x2) - a l'interieur des panneaux lateraux ===
+    for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - FRAME_W]:
         all_faces.extend(_tilted_box_faces(
             bx, SUPPORT_BASE_Y, 0,
             FRAME_W, FRAME_D, SUPPORT_FULL_L, BACKREST_TILT))
@@ -325,10 +323,9 @@ def generate_pdf():
     ax2.add_patch(Rectangle((0, PANEL_H*s2), CHAIR_WIDTH*s2, SLAT_T*s2,
                              fc=W2, ec="black", lw=1))
 
-    # Supports dossier continus (du sol au sommet, en retrait)
-    for px in [0, (CHAIR_WIDTH - PANEL_W)*s2]:
-        bx = px + ((PANEL_W - FRAME_W)/2)*s2
-        ax2.add_patch(Rectangle((bx, 0), FRAME_W*s2, TOTAL_H*s2,
+    # Supports dossier continus (a l'interieur des panneaux)
+    for bx in [PANEL_W, CHAIR_WIDTH - PANEL_W - FRAME_W]:
+        ax2.add_patch(Rectangle((bx*s2, 0), FRAME_W*s2, TOTAL_H*s2,
                                  fc=W1, ec="black", lw=0.6, ls="--", alpha=0.5))
 
     # Dossier lattes (hauteur projetee a cos(35 deg))
